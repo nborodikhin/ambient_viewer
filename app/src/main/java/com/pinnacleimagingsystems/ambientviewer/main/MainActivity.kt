@@ -3,13 +3,16 @@ package com.pinnacleimagingsystems.ambientviewer.main
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.viewer.ViewerActivity
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,6 +25,10 @@ class MainActivity : AppCompatActivity() {
         object {
             val loadImageButton = findViewById<View>(R.id.load_image)
             val event = findViewById<TextView>(R.id.event)
+            val loadLastButton = findViewById<View>(R.id.load_last)
+            val lastContainer = findViewById<View>(R.id.last_file_container)
+            val lastFileName = findViewById<TextView>(R.id.last_file_name)
+            val lastFilePreview = findViewById<ImageView>(R.id.last_file_preview)
         }
     }
 
@@ -35,7 +42,11 @@ class MainActivity : AppCompatActivity() {
             init(application)
         }
 
-        views.loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
+        views.apply {
+            loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
+            loadLastButton.setOnClickListener { _ -> onLoadLastClicked() }
+            lastFileName.setOnClickListener { _ -> onLoadLastClicked() }
+        }
     }
 
     override fun onStart() {
@@ -46,11 +57,12 @@ class MainActivity : AppCompatActivity() {
         })
 
         presenter.state.event.observe(this, Observer { event -> event!!.consume(::onEvent) })
+        presenter.state.lastFile.observe(this, Observer { lastFile -> onLastFileChanged(lastFile!!) })
     }
 
     private fun onEvent(event: MainPresenter.State.Event) {
         when(event) {
-            is MainPresenter.State.Event.FileLoaded -> {
+            is MainPresenter.State.Event.ViewFile -> {
                 val intent = Intent(this, ViewerActivity::class.java).apply {
                     putExtra(ViewerActivity.PARAM_FILE, event.file)
                 }
@@ -67,6 +79,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         startActivityForResult(intent, PICK_IMAGE_CODE)
+    }
+
+    private fun onLoadLastClicked() {
+        presenter.onLastFileClicked()
+    }
+
+    private fun onLastFileChanged(lastFile: File) {
+        views.loadLastButton.isEnabled = true
+        views.lastContainer.visibility = View.VISIBLE
+        views.lastFileName.text = lastFile.toString()
+        views.lastFilePreview.setImageURI(Uri.fromFile(lastFile))
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
