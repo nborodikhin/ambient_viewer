@@ -1,6 +1,5 @@
 package com.pinnacleimagingsystems.ambientviewer.main
 
-import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
@@ -18,12 +17,12 @@ class MainActivity : AppCompatActivity() {
         const val PICK_IMAGE_CODE = 123
     }
 
-    class Views(activity: Activity) {
-        val loadImageButton: View = activity.findViewById(R.id.load_image)
-        val event: TextView = activity.findViewById(R.id.event)
+    private val views by lazy {
+        object {
+            val loadImageButton = findViewById<View>(R.id.load_image)
+            val event = findViewById<TextView>(R.id.event)
+        }
     }
-
-    lateinit var views: Views
 
     lateinit var presenter: MainPresenter
 
@@ -34,8 +33,6 @@ class MainActivity : AppCompatActivity() {
         presenter = ViewModelProviders.of(this)[MainPresenterImpl::class.java].apply {
             init(application)
         }
-
-        views = Views(this)
 
         views.loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
     }

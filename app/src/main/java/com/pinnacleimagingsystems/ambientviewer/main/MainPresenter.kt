@@ -4,12 +4,9 @@ import android.app.Application
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
-import com.pinnacleimagingsystems.ambientviewer.main.tasks.CopyTask
+import com.pinnacleimagingsystems.ambientviewer.Deps
+import com.pinnacleimagingsystems.ambientviewer.tasks.CopyTask
 import java.io.File
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
 
 abstract class MainPresenter: ViewModel() {
     class State {
@@ -28,24 +25,37 @@ class MainPresenterImpl: MainPresenter() {
     }
 
     private lateinit var context: Application
-    private lateinit var handler: Handler
 
-    private val bgExecutor = Executors.newSingleThreadExecutor()
-    private val mainExecutor = Executor { runnable -> handler.post(runnable) }
+    private val bgExecutor = Deps.bgExecutor
+    private val mainExecutor = Deps.mainExecutor
 
     fun init(context: Application) {
         this.context = context
-        this.handler = Handler(Looper.getMainLooper())
     }
 
     override fun onFileSelected(uri: Uri) {
         val copy = CopyTask(context)
 
+        fun deliverLoadResult(state: MainPresenter.State, uri: Uri, copyResult: CopyTask.CopyResult) {
+            when(copyResult) {
+                is CopyTask.CopyResult.UnsupportedType -> {
+                    state.event.value = "Failed: unsupported type ${copyResult.mimeType}"
+                }
+                is CopyTask.CopyResult.Failure -> {
+                    state.event.value = "Failed: exception ${copyResult.exception}"
+                }
+                is CopyTask.CopyResult.Success -> {
+                    state.event.value = "loaded file ${copyResult.file} of ${copyResult.mimeType} from $uri"
+                    state.currentFile.value = copyResult.file
+                }
+            }
+        }
+
         bgExecutor.execute {
             val copyResult = copy.copyFile(uri)
 
             mainExecutor.execute {
-                copy.deliverLoadResult(state, uri, copyResult)
+                deliverLoadResult(state, uri, copyResult)
             }
         }
     }

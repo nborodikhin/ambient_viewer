@@ -1,11 +1,9 @@
-package com.pinnacleimagingsystems.ambientviewer.main.tasks
+package com.pinnacleimagingsystems.ambientviewer.tasks
 
 import android.content.Context
 import android.net.Uri
-import android.support.annotation.MainThread
 import android.support.annotation.WorkerThread
 import android.util.Log
-import com.pinnacleimagingsystems.ambientviewer.main.MainPresenter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -42,22 +40,6 @@ class CopyTask(val context: Context) {
             }
         } catch (e: Exception) {
             return CopyResult.Failure(e)
-        }
-    }
-
-    @MainThread
-    fun deliverLoadResult(state: MainPresenter.State, uri: Uri, copyResult: CopyResult) {
-        when(copyResult) {
-            is CopyResult.UnsupportedType -> {
-                state.event.value = "Failed: unsupported type ${copyResult.mimeType}"
-            }
-            is CopyResult.Failure -> {
-                state.event.value = "Failed: exception ${copyResult.exception}"
-            }
-            is CopyResult.Success -> {
-                state.event.value = "loaded file ${copyResult.file} of ${copyResult.mimeType} from $uri"
-                state.currentFile.value = copyResult.file
-            }
         }
     }
 
