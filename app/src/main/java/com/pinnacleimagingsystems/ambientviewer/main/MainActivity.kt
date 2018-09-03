@@ -9,6 +9,7 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.TextView
 import com.pinnacleimagingsystems.ambientviewer.R
+import com.pinnacleimagingsystems.ambientviewer.viewer.ViewerActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,9 +41,22 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        presenter.state.event.observe(this, Observer { text ->
+        presenter.state.eventDescription.observe(this, Observer { text ->
             views.event.text = text
         })
+
+        presenter.state.event.observe(this, Observer { event -> event!!.consume(::onEvent) })
+    }
+
+    private fun onEvent(event: MainPresenter.State.Event) {
+        when(event) {
+            is MainPresenter.State.Event.FileLoaded -> {
+                val intent = Intent(this, ViewerActivity::class.java).apply {
+                    putExtra(ViewerActivity.PARAM_FILE, event.file)
+                }
+                startActivity(intent)
+            }
+        }
     }
 
     private fun onLoadButtonClicked() {
