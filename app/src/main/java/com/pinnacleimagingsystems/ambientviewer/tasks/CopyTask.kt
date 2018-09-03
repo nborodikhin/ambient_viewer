@@ -6,6 +6,7 @@ import android.support.annotation.WorkerThread
 import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 
 class CopyTask(val context: Context) {
@@ -27,7 +28,11 @@ class CopyTask(val context: Context) {
         val stream = contentResolver.openInputStream(uri)
 
         if (mimeType != "image/jpeg") {
-            return CopyResult.UnsupportedType(mimeType)
+            return CopyResult.UnsupportedType(mimeType.orEmpty())
+        }
+
+        if (stream == null) {
+            return CopyResult.Failure(IOException("Error opening stream to $uri"))
         }
 
         Log.e(TAG, "uri $uri")
