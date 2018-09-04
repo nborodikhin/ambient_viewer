@@ -17,7 +17,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".viewer.ViewerActivity"/>
+        <activity
+            android:name=".viewer.ViewerActivity"
+            android:theme="@style/ViewerActivity"
+            />
     </application>
 
 </manifest>

@@ -2,4 +2,6 @@
     <string name="app_name">AmbientViewer</string>
     <string name="load_image">Select image</string>
     <string name="load_last">Load Last</string>
+    <string name="original">Original</string>
+    <string name="adapted">Adapted</string>
 </resources>
