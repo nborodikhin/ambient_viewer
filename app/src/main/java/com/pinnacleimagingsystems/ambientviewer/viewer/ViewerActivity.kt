@@ -5,6 +5,7 @@ import android.graphics.Matrix
 import android.os.Bundle
 import android.support.media.ExifInterface
 import android.support.v7.app.AppCompatActivity
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import com.github.chrisbanes.photoview.PhotoView
@@ -31,6 +32,14 @@ class ViewerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_viewer)
+
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
+                makeUiFullscreen()
+            }
+        }
+
+        makeUiFullscreen()
 
         views.photoView.apply {
             maximumScale = MAXIMUM_SCALE
@@ -64,6 +73,11 @@ class ViewerActivity : AppCompatActivity() {
         updateBitmap()
 
         setNextBitmap()
+    }
+
+    private fun makeUiFullscreen() {
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+        actionBar?.hide()
     }
 
     private fun updateBitmap() {
