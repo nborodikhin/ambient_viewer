@@ -44,7 +44,10 @@ class MainPresenterImpl: MainPresenter() {
         this.context = context
         val lastFile = Deps.prefs.getString(Prefs.LAST_NAME, null)
         if (lastFile != null) {
-            state.lastFile.value = File(lastFile)
+            val file = File(lastFile)
+            if (file.exists()) {
+                state.lastFile.value = file
+            }
         }
     }
 
