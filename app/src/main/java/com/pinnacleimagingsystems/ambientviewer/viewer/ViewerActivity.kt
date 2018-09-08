@@ -1,13 +1,15 @@
 package com.pinnacleimagingsystems.ambientviewer.viewer
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.os.Bundle
+import android.support.media.ExifInterface
 import android.support.v7.app.AppCompatActivity
 import android.widget.TextView
+import android.widget.Toast
 import com.github.chrisbanes.photoview.PhotoView
 import com.pinnacleimagingsystems.ambientviewer.R
+import com.pinnacleimagingsystems.ambientviewer.loadBitmap
 
 class ViewerActivity : AppCompatActivity() {
     companion object {
@@ -37,7 +39,14 @@ class ViewerActivity : AppCompatActivity() {
 
         val file = intent.extras!!.getString(PARAM_FILE)!!
 
-        val bitmap = BitmapFactory.decodeFile(file)
+        val bitmap = loadBitmap(file)
+
+        val exif = ExifInterface(file)
+        val colorSpaceInt = exif.getAttributeInt(ExifInterface.TAG_COLOR_SPACE, ExifInterface.COLOR_SPACE_UNCALIBRATED)
+        if (colorSpaceInt != ExifInterface.COLOR_SPACE_S_RGB) {
+            Toast.makeText(this, "Unsupported colorspace (non-sRGB)", Toast.LENGTH_SHORT).show()
+        }
+
         val updatedBitmap = bitmap.copy(bitmap.config, true)
 
         bitmaps = arrayOf(bitmap, updatedBitmap)
