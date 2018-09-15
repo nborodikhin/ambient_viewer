@@ -49,6 +49,7 @@ abstract class ViewerPresenter: ViewModel() {
 class ViewerPresenterImpl: ViewerPresenter() {
     private val bgExecutor = Deps.bgExecutor
     private val mainExecutor = Deps.mainExecutor
+    private val algorithm = Deps.createAlgorithm()
 
     override fun loadFile(file: String) {
         if (state.state.value!! != State.UNINITIALIZED) {
@@ -71,6 +72,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
 
             val updatedBitmap = bitmap.copy(bitmap.config, true)
 
+            algorithm.init(2)
             updateBitmap(bitmap, updatedBitmap)
 
             state.workingImage.postValue(Image(ImageType.WORKING, updatedBitmap))
@@ -98,12 +100,13 @@ class ViewerPresenterImpl: ViewerPresenter() {
         val width = origBitmap.width
         val height = origBitmap.height
 
-        val pixels = IntArray(width)
+        val pixels = IntArray(width * height)
 
-        for (y in 0 until height) {
-            origBitmap.getPixels(pixels, 0, width, 0, y, width, 1)
-            newBitmap.setPixels(pixels, 0, width, 0, (height - 1) - y, width, 1)
-        }
+        origBitmap.getPixels(pixels, 0, width, 0, 0, width, height)
+
+        algorithm.apply(pixels, width, height)
+
+        newBitmap.setPixels(pixels, 0, width, 0, 0, width, height)
     }
 }
 

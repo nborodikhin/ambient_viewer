@@ -13,6 +13,9 @@ object Deps {
 
     lateinit var prefs: SharedPreferences
 
+    fun createAlgorithm(): Algorithm
+        = AlgorithImpl()
+
     private lateinit var mainHandler: Handler
 
     fun init(applicaionContext: Context) {
