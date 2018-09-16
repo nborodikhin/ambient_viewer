@@ -83,8 +83,9 @@ public class AlgorithImpl implements Algorithm {
     private int apply(int component) {
         float linear = linearize(component);
 
-        float x = (parameter + 5.0f) / 11 * 0.5f;
-        float y = 0.5f;
+        float k = 1.f + parameter * 0.5f;
+        float x = 0.01f;
+        float y = k * x;
 
         if (linear < x) {
             linear = linear * y / x;
