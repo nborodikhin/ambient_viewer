@@ -49,7 +49,7 @@ abstract class ViewerPresenter: ViewModel() {
 
         val curParameter by lazy { MutableLiveData<Int>().apply { value = PARAMETER_DEFAULT } }
         val originalImage by lazy { MutableLiveData<Image>() }
-        val workingImage by lazy { MutableLiveData<Image>() }
+        var workingImage: Image? = null
 
         val displayingImage by lazy { MutableLiveData<Image>() }
 
@@ -118,7 +118,8 @@ class ViewerPresenterImpl: ViewerPresenter() {
             algorithm.init(parameter)
             updateBitmap(originalBitmap, workingBitmap)
 
-            state.workingImage.postValue(Image(ImageType.WORKING, workingBitmap, parameters))
+            val image = Image(ImageType.WORKING, workingBitmap, parameters)
+            state.workingImage = image
             setDisplayingImage(ViewerPresenter.ImageType.WORKING)
 
             state.state.apply {
@@ -143,7 +144,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
             ViewerPresenter.ImageType.ORIGINAL -> state.originalImage.value?.let { image ->
                 state.displayingImage.postValue(image)
             }
-            ViewerPresenter.ImageType.WORKING -> state.workingImage.value?.let{ image ->
+            ViewerPresenter.ImageType.WORKING -> state.workingImage?.let{ image ->
                 state.displayingImage.postValue(image)
             }
         }

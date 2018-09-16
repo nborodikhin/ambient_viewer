@@ -70,13 +70,13 @@ class ViewerActivity : AppCompatActivity() {
         setProgress(parameter, false)
 
         setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                presenter.onSetParameter(progress)
-            }
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
 
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                presenter.onSetParameter(progress)
+            }
         })
     }
 
@@ -173,17 +173,23 @@ class ViewerActivity : AppCompatActivity() {
     private fun updateLabel() {
         val image = presenter.state.displayingImage.value ?: return
 
+        val scale = views.photoView.scale.toString()
+
         val label = when (image.type) {
-            ViewerPresenter.ImageType.ORIGINAL -> getString(R.string.original)
-            ViewerPresenter.ImageType.WORKING -> getString(R.string.adapted)
+            ViewerPresenter.ImageType.ORIGINAL ->
+                String.format(
+                        getString(R.string.original),
+                        scale
+                )
+            ViewerPresenter.ImageType.WORKING ->
+                String.format(
+                        getString(R.string.adapted),
+                        scale,
+                        image.parameters?.slider
+                )
         }
 
-        val scale = views.photoView.scale
 
-        val value = with (views.parameterSlider) {
-            (presenter.state.curParameter.value!! - max) / (max - min)
-        }
-
-        views.bitmapState.text = "$label, scale $scale, param $value"
+        views.bitmapState.text = label
     }
 }
