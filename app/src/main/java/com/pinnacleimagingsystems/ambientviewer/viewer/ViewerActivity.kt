@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import com.github.chrisbanes.photoview.PhotoView
@@ -19,12 +20,16 @@ class ViewerActivity : AppCompatActivity() {
         private const val MAXIMUM_SCALE = 64.0f
     }
 
+    fun ignoreClick(view: View) {}
+
     private val views by lazy { object {
         val content: View = findViewById(R.id.content)
+        val contentClickOverlay: View = findViewById(R.id.content_click_overlay)
         val progressBar: View = findViewById(R.id.progressBar)
 
         val photoView: PhotoView = findViewById(R.id.photo_view)
         val bitmapState: TextView = findViewById(R.id.bitmap_state)
+        val parameterSlider: SeekBar = findViewById(R.id.parameter_slider)
     } }
 
     private lateinit var presenter: ViewerPresenter
@@ -48,12 +53,31 @@ class ViewerActivity : AppCompatActivity() {
             setOnScaleChangeListener { _, _, _ -> updateLabel() }
             setOnClickListener { _ -> presenter.onImageClicked() }
         }
+        views.contentClickOverlay.setOnClickListener { view -> ignoreClick(view) }
 
         presenter.state.state.observe(this, Observer { state -> onStateChanged(state!!) })
         presenter.state.event.observe(this, Observer { event -> event!!.consume(this::onEvent) })
         presenter.state.displayingImage.observe(this, Observer { image -> onDisplayingImageChanged(image!!) } )
+        setSlider(presenter.state.curParameter.value!!)
+
 
         views.content.postDelayed(this::processIntent, 200L)
+    }
+
+    private fun setSlider(parameter: Int) = with (views.parameterSlider) {
+        setOnSeekBarChangeListener(null)
+
+        setProgress(parameter, false)
+
+        setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                presenter.onSetParameter(progress)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
     }
 
     private fun processIntent() {
@@ -71,21 +95,32 @@ class ViewerActivity : AppCompatActivity() {
         makeUiFullscreen()
     }
 
+    var currentState: ViewerPresenter.State? = null
+
     private fun onStateChanged(state: ViewerPresenter.State) {
         when (state) {
             ViewerPresenter.State.UNINITIALIZED -> {
                 views.content.visibility = View.GONE
+                views.contentClickOverlay.visibility = View.GONE
                 views.progressBar.visibility = View.GONE
             }
             ViewerPresenter.State.LOADING -> {
                 views.content.visibility = View.GONE
+                views.contentClickOverlay.visibility = View.GONE
                 views.progressBar.animateFadeIn(duration = shortAnimTime)
             }
-            ViewerPresenter.State.LOADED -> {
-                views.content.animateFadeIn(duration = longAnimTime)
+            ViewerPresenter.State.PROCESSING -> {
+                views.content.visibility = View.VISIBLE
+                views.contentClickOverlay.visibility = View.VISIBLE
+                views.progressBar.animateFadeIn(duration = shortAnimTime)
+            }
+            ViewerPresenter.State.DISPLAYING -> {
+                views.contentClickOverlay.visibility = View.GONE
+                views.content.animateFadeIn(from = views.content.alpha, duration = longAnimTime)
                 views.progressBar.animateFadeOut(duration = longAnimTime)
             }
         }
+        currentState = state
     }
 
     private fun View.animateFadeIn(from: Float = 0.0f, to: Float = 1.0f, duration: Long) {
@@ -145,7 +180,10 @@ class ViewerActivity : AppCompatActivity() {
 
         val scale = views.photoView.scale
 
-        views.bitmapState.text = "$label, scale $scale"
+        val value = with (views.parameterSlider) {
+            (presenter.state.curParameter.value!! - max) / (max - min)
+        }
 
+        views.bitmapState.text = "$label, scale $scale, param $value"
     }
 }
