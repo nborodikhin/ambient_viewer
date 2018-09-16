@@ -60,7 +60,6 @@ public class AlgorithImpl implements Algorithm {
                 int intGamma = (int) Math.floor(gamma * 255.0f);
 
                 LINEAR_TO_GAMMA[i] = intGamma;
-                System.out.println("" + i + " -> " + LINEAR_TO_GAMMA[i]);
             }
             LINEAR_TO_GAMMA[GAMMA_SIZE] = 255;
         }
