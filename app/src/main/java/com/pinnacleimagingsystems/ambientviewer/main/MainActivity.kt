@@ -10,6 +10,7 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import com.pinnacleimagingsystems.ambientviewer.BuildConfig
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.loadThumbnailBitmap
 import com.pinnacleimagingsystems.ambientviewer.viewer.ViewerActivity
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
             val lastContainer = findViewById<View>(R.id.last_file_container)
             val lastFileName = findViewById<TextView>(R.id.last_file_name)
             val lastFilePreview = findViewById<ImageView>(R.id.last_file_preview)
+            val version = findViewById<TextView>(R.id.version)
         }
     }
 
@@ -47,6 +49,7 @@ class MainActivity : AppCompatActivity() {
             loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
             loadLastButton.setOnClickListener { _ -> onLoadLastClicked() }
             lastFileName.setOnClickListener { _ -> onLoadLastClicked() }
+            version.text = getString(R.string.version, BuildConfig.VERSION_NAME)
         }
     }
 

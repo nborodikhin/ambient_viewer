@@ -4,4 +4,5 @@
     <string name="load_last">Load Last</string>
     <string name="original">Original, scale %s</string>
     <string name="adapted">Adapted, scale %s, param %d</string>
+    <string name="version">Version %s</string>
 </resources>
