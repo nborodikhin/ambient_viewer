@@ -90,7 +90,9 @@ class ViewerPresenterImpl: ViewerPresenter() {
             val originalImage = Image(ImageType.ORIGINAL, bitmap)
             state.originalImage.postValue(originalImage)
 
-            processImage(state.curParameter.value!!)
+            mainExecutor.execute {
+                processImage(state.curParameter.value!!)
+            }
 
             state.displayingImage.postValue(originalImage)
         }
