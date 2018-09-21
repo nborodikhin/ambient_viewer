@@ -20,8 +20,6 @@ class ViewerActivity : AppCompatActivity() {
         private const val MAXIMUM_SCALE = 64.0f
     }
 
-    fun ignoreClick(view: View) {}
-
     private val views by lazy { object {
         val content: View = findViewById(R.id.content)
         val contentClickOverlay: View = findViewById(R.id.content_click_overlay)
@@ -53,7 +51,7 @@ class ViewerActivity : AppCompatActivity() {
             setOnScaleChangeListener { _, _, _ -> updateLabel() }
             setOnClickListener { _ -> presenter.onImageClicked() }
         }
-        views.contentClickOverlay.setOnClickListener { view -> ignoreClick(view) }
+        views.contentClickOverlay.setOnClickListener { }
 
         presenter.state.state.observe(this, Observer { state -> onStateChanged(state!!) })
         presenter.state.event.observe(this, Observer { event -> event!!.consume(this::onEvent) })
