@@ -12,6 +12,8 @@ import android.widget.TextView
 import android.widget.Toast
 import com.github.chrisbanes.photoview.PhotoView
 import com.pinnacleimagingsystems.ambientviewer.R
+import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
+import kotlin.math.roundToInt
 
 class ViewerActivity : AppCompatActivity() {
     companion object {
@@ -32,6 +34,8 @@ class ViewerActivity : AppCompatActivity() {
 
     private lateinit var presenter: ViewerPresenter
 
+    private lateinit var lightSensor: LightSensor
+
     private val shortAnimTime: Long
         get() = resources.getInteger(android.R.integer.config_shortAnimTime).toLong()
 
@@ -41,6 +45,8 @@ class ViewerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_viewer)
+
+        lightSensor = (applicationContext as LightSensor.Holder).getLightSensor()
 
         presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java]
 
@@ -58,6 +64,7 @@ class ViewerActivity : AppCompatActivity() {
         presenter.state.displayingImage.observe(this, Observer { image -> onDisplayingImageChanged(image!!) } )
         setSlider(presenter.state.curParameter.value!!)
 
+        lightSensor.value.observe(this, Observer { value -> onLightSensorChange(value!!.roundToInt()) })
 
         views.content.postDelayed(this::processIntent, 200L)
     }
@@ -155,6 +162,10 @@ class ViewerActivity : AppCompatActivity() {
         updateLabel()
     }
 
+    private fun onLightSensorChange(value: Int) {
+        updateLabel()
+    }
+
     private fun makeUiFullscreen() {
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
         actionBar?.hide()
@@ -177,12 +188,14 @@ class ViewerActivity : AppCompatActivity() {
             ViewerPresenter.ImageType.ORIGINAL ->
                 String.format(
                         getString(R.string.original),
-                        scale
+                        scale,
+                        lightSensor.value.value!!.roundToInt()
                 )
             ViewerPresenter.ImageType.WORKING ->
                 String.format(
                         getString(R.string.adapted),
                         scale,
+                        lightSensor.value.value!!.roundToInt(),
                         image.parameters?.slider
                 )
         }
