@@ -27,19 +27,15 @@ abstract class ViewerPresenter: ViewModel() {
         WORKING
     }
 
-    data class Parameters(
-        val slider: Int,
-        val lightSensor: Int = 0
-    )
-
     data class Image(
             val type: ImageType,
             val bitmap: Bitmap,
-            val parameters: Parameters? = null
+            val parameters: AlgorithmParameters? = null
     )
 
     sealed class Event {
         object NonSrgbWarning: Event()
+        object DataPointSaved: Event()
 
         fun asConsumable(): ConsumableEvent<Event> = ConsumableEvent(this)
     }
@@ -61,12 +57,15 @@ abstract class ViewerPresenter: ViewModel() {
     abstract fun loadFile(file: String)
     abstract fun onSetParameter(parameter: Int)
     abstract fun onImageClicked()
+    abstract fun onSaveButtonClicked(image: Image, viewingLux: Int)
 }
 
 class ViewerPresenterImpl: ViewerPresenter() {
     private val bgExecutor = Deps.bgExecutor
     private val mainExecutor = Deps.mainExecutor
     private val algorithm = Deps.createAlgorithm()
+    private val dataStorage = Deps.dataStorage
+
     private lateinit var workingBitmap: Bitmap
 
     override fun loadFile(file: String) {
@@ -108,13 +107,23 @@ class ViewerPresenterImpl: ViewerPresenter() {
         processImage(parameter)
     }
 
+    override fun onSaveButtonClicked(image: Image, viewingLux: Int) {
+        val parameters = image.parameters ?: return
+
+        dataStorage.saveDataPoint(
+                createDataPoint(parameters, viewingLux)
+        )
+
+        state.event.postValue(Event.DataPointSaved.asConsumable())
+    }
+
     fun processImage(parameter: Int) {
         state.curParameter.postValue(parameter)
 
         bgExecutor.execute {
             val originalBitmap = state.originalImage.value!!.bitmap
 
-            val parameters = Parameters(
+            val parameters = AlgorithmParameters(
                     parameter
             )
             algorithm.init(parameter)

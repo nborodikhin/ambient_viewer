@@ -1,5 +1,6 @@
 package com.pinnacleimagingsystems.ambientviewer.viewer
 
+import android.arch.lifecycle.LifecycleOwner
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.graphics.Bitmap
@@ -7,9 +8,7 @@ import android.graphics.Matrix
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
-import android.widget.SeekBar
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
@@ -20,6 +19,9 @@ class ViewerActivity : AppCompatActivity() {
         const val PARAM_FILE = "file"
 
         private const val MAXIMUM_SCALE = 64.0f
+
+        private const val INITIAL_PARAMETER_READ_TIMEOUT = 200L
+        private const val CHECKBOX_RESET_DELAY = 1000L
     }
 
     private val views by lazy { object {
@@ -30,6 +32,7 @@ class ViewerActivity : AppCompatActivity() {
         val photoView: PhotoView = findViewById(R.id.photo_view)
         val bitmapState: TextView = findViewById(R.id.bitmap_state)
         val parameterSlider: SeekBar = findViewById(R.id.parameter_slider)
+        val saveCheckbox: CheckBox = findViewById(R.id.save_checkbox)
     } }
 
     private lateinit var presenter: ViewerPresenter
@@ -48,25 +51,36 @@ class ViewerActivity : AppCompatActivity() {
 
         lightSensor = (applicationContext as LightSensor.Holder).getLightSensor()
 
+        val lifecycleOwner: LifecycleOwner = this@ViewerActivity
         presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java]
 
         setupFullscreen()
 
-        views.photoView.apply {
-            maximumScale = MAXIMUM_SCALE
-            setOnScaleChangeListener { _, _, _ -> updateLabel() }
-            setOnClickListener { _ -> presenter.onImageClicked() }
+        with(views) {
+            photoView.apply {
+                maximumScale = MAXIMUM_SCALE
+                setOnScaleChangeListener { _, _, _ -> updateLabel() }
+                setOnClickListener { _ -> presenter.onImageClicked() }
+            }
+            contentClickOverlay.setOnClickListener { }
+            saveCheckbox.setOnClickListener { _ -> onSaveClicked() }
         }
-        views.contentClickOverlay.setOnClickListener { }
 
-        presenter.state.state.observe(this, Observer { state -> onStateChanged(state!!) })
-        presenter.state.event.observe(this, Observer { event -> event!!.consume(this::onEvent) })
-        presenter.state.displayingImage.observe(this, Observer { image -> onDisplayingImageChanged(image!!) } )
+        with (presenter.state) {
+            state.observe(lifecycleOwner, Observer { state -> onStateChanged(state!!) })
+            event.observe(lifecycleOwner, Observer { event -> event!!.consume(this@ViewerActivity::onEvent) })
+            displayingImage.observe(lifecycleOwner, Observer { image -> onDisplayingImageChanged(image!!) })
+        }
+
+        lightSensor.value.observe(lifecycleOwner, Observer { value -> onLightSensorChange(value!!.roundToInt()) })
+
         setSlider(presenter.state.curParameter.value!!)
 
-        lightSensor.value.observe(this, Observer { value -> onLightSensorChange(value!!.roundToInt()) })
+        postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { processIntent() }
+    }
 
-        views.content.postDelayed(this::processIntent, 200L)
+    private fun postDelayed(delayMillis: Long, block: () -> Unit) {
+        views.content.postDelayed(block, delayMillis)
     }
 
     private fun setSlider(parameter: Int) = with (views.parameterSlider) {
@@ -151,9 +165,21 @@ class ViewerActivity : AppCompatActivity() {
                 .start()
     }
 
-    private fun onEvent(event: ViewerPresenter.Event) = when (event) {
-        ViewerPresenter.Event.NonSrgbWarning -> {
-            Toast.makeText(this, "Unsupported colorspace (non-sRGB)", Toast.LENGTH_SHORT).show()
+    private fun onEvent(event: ViewerPresenter.Event) {
+        when (event) {
+            ViewerPresenter.Event.NonSrgbWarning -> {
+                Toast.makeText(this, "Unsupported colorspace (non-sRGB)", Toast.LENGTH_SHORT).show()
+            }
+            ViewerPresenter.Event.DataPointSaved -> {
+                Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
+                with (views.saveCheckbox) {
+                    isClickable = false
+                    postDelayed(CHECKBOX_RESET_DELAY) {
+                        isChecked = false
+                        isClickable = true
+                    }
+                }
+            }
         }
     }
 
@@ -202,5 +228,12 @@ class ViewerActivity : AppCompatActivity() {
 
 
         views.bitmapState.text = label
+    }
+
+    private fun onSaveClicked() {
+        val image = presenter.state.displayingImage.value ?: return
+        val viewingLux = lightSensor.value.value?.roundToInt() ?: -1
+
+        presenter.onSaveButtonClicked(image, viewingLux)
     }
 }

@@ -17,4 +17,8 @@
         <item name="colorAccent">@color/viewerGrayAccent</item>
     </style>
 
+    <style name="GrayCheckbox" parent="ThemeOverlay.AppCompat.Dark">
+        <item name="colorButtonNormal">?attr/colorAccent</item>
+    </style>
+
 </resources>
