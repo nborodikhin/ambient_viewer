@@ -10,8 +10,8 @@ android {
         applicationId "com.pinnacleimagingsystems.ambientviewer"
         minSdkVersion 26
         targetSdkVersion 28
-        versionCode 61
-        versionName "0.61"
+        versionCode 70
+        versionName "0.70"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
