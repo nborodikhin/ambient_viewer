@@ -72,7 +72,7 @@ class ViewerActivity : AppCompatActivity() {
             displayingImage.observe(lifecycleOwner, Observer { image -> onDisplayingImageChanged(image!!) })
         }
 
-        lightSensor.value.observe(lifecycleOwner, Observer { value -> onLightSensorChange(value!!.roundToInt()) })
+        lightSensor.value.observe(lifecycleOwner, Observer { _ -> onLightSensorChange() })
 
         setSlider(presenter.state.curParameter.value!!)
 
@@ -188,7 +188,7 @@ class ViewerActivity : AppCompatActivity() {
         updateLabel()
     }
 
-    private fun onLightSensorChange(value: Int) {
+    private fun onLightSensorChange() {
         updateLabel()
     }
 
