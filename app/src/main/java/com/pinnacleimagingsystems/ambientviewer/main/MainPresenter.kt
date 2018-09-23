@@ -8,6 +8,7 @@ import com.pinnacleimagingsystems.ambientviewer.ConsumableEvent
 import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.Prefs
 import com.pinnacleimagingsystems.ambientviewer.tasks.CopyTask
+import com.pinnacleimagingsystems.ambientviewer.toDisplayName
 import java.io.File
 
 abstract class MainPresenter: ViewModel() {
@@ -36,6 +37,7 @@ class MainPresenterImpl: MainPresenter() {
     }
 
     private lateinit var context: Application
+    private val contentResolver get() = context.contentResolver
 
     private val bgExecutor = Deps.bgExecutor
     private val mainExecutor = Deps.mainExecutor
@@ -52,6 +54,8 @@ class MainPresenterImpl: MainPresenter() {
     }
 
     override fun onFileSelected(uri: Uri) {
+        val displayName = uri.toDisplayName(contentResolver)
+
         val copy = CopyTask(context)
 
         fun deliverLoadResult(state: MainPresenter.State, uri: Uri, copyResult: CopyTask.CopyResult) {
@@ -78,7 +82,7 @@ class MainPresenterImpl: MainPresenter() {
         }
 
         bgExecutor.execute {
-            val copyResult = copy.copyFile(uri)
+            val copyResult = copy.copyFile(uri, displayName)
 
             mainExecutor.execute {
                 deliverLoadResult(state, uri, copyResult)

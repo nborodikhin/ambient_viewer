@@ -13,6 +13,7 @@ import android.widget.TextView
 import com.pinnacleimagingsystems.ambientviewer.BuildConfig
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.loadThumbnailBitmap
+import com.pinnacleimagingsystems.ambientviewer.toDisplayName
 import com.pinnacleimagingsystems.ambientviewer.viewer.ViewerActivity
 import java.io.File
 
@@ -92,7 +93,7 @@ class MainActivity : AppCompatActivity() {
     private fun onLastFileChanged(lastFile: File) {
         views.loadLastButton.isEnabled = true
         views.lastContainer.visibility = View.VISIBLE
-        views.lastFileName.text = lastFile.toString()
+        views.lastFileName.text = Uri.fromFile(lastFile).toDisplayName(contentResolver)
         views.lastFilePreview.setPreviewFromFile(lastFile)
     }
 
@@ -106,8 +107,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == PICK_IMAGE_CODE && data != null && data.data != null) {
-            presenter.onFileSelected(data.data!!)
+        val intentData = data?.data
+
+        if (requestCode == PICK_IMAGE_CODE && resultCode == RESULT_OK && intentData != null) {
+            presenter.onFileSelected(intentData)
         }
     }
 }

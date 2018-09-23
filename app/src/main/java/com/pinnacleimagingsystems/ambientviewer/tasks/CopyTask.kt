@@ -21,7 +21,7 @@ class CopyTask(val context: Context) {
     }
 
     @WorkerThread
-    fun copyFile(uri: Uri): CopyResult {
+    fun copyFile(uri: Uri, fileName: String?): CopyResult {
         val contentResolver = context.contentResolver
 
         val mimeType = contentResolver.getType(uri)
@@ -35,12 +35,9 @@ class CopyTask(val context: Context) {
             return CopyResult.Failure(IOException("Error opening stream to $uri"))
         }
 
-        Log.e(TAG, "uri $uri")
-        Log.e(TAG, "type $mimeType")
-
         try {
             stream.use {
-                val file = copyStream(stream)
+                val file = copyStream(stream, fileName)
                 return CopyResult.Success(mimeType, file)
             }
         } catch (e: Exception) {
@@ -49,9 +46,9 @@ class CopyTask(val context: Context) {
     }
 
     @WorkerThread
-    private fun copyStream(stream: InputStream): File {
+    private fun copyStream(stream: InputStream, fileName: String?): File {
         val cacheDir = context.cacheDir
-        val outputFile = File.createTempFile("file-", ".copy", cacheDir)
+        val outputFile = File(cacheDir, fileName ?: "tempFile")
 
         val buffer = ByteArray(1024 * 1024)
 

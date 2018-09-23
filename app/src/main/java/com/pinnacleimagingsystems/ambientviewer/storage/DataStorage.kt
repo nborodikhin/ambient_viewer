@@ -3,6 +3,7 @@ package com.pinnacleimagingsystems.ambientviewer.storage
 private const val TAG = "DataStorage"
 
 data class DataPoint(
+        val fileName: String,
         val slider: Int,
         val viewingConditionLux: Int
 )

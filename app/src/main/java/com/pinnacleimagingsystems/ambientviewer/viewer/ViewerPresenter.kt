@@ -3,12 +3,14 @@ package com.pinnacleimagingsystems.ambientviewer.viewer
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.ViewModel
 import android.graphics.Bitmap
+import android.net.Uri
 import android.support.annotation.AnyThread
 import android.support.annotation.WorkerThread
 import android.support.media.ExifInterface
 import com.pinnacleimagingsystems.ambientviewer.ConsumableEvent
 import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.loadBitmap
+import com.pinnacleimagingsystems.ambientviewer.toDisplayName
 
 abstract class ViewerPresenter: ViewModel() {
     companion object {
@@ -41,6 +43,7 @@ abstract class ViewerPresenter: ViewModel() {
     }
 
     class ViewerState {
+        val displayName by lazy { MutableLiveData<String>() }
         val state by lazy { MutableLiveData<State>().apply { value = State.UNINITIALIZED } }
 
         val curParameter by lazy { MutableLiveData<Int>().apply { value = PARAMETER_DEFAULT } }
@@ -61,6 +64,7 @@ abstract class ViewerPresenter: ViewModel() {
 }
 
 class ViewerPresenterImpl: ViewerPresenter() {
+    private val contentResolver = Deps.contentResolver
     private val bgExecutor = Deps.bgExecutor
     private val mainExecutor = Deps.mainExecutor
     private val algorithm = Deps.createAlgorithm()
@@ -74,6 +78,8 @@ class ViewerPresenterImpl: ViewerPresenter() {
         }
 
         state.state.value = State.LOADING
+
+        state.displayName.value = Uri.parse(file).toDisplayName(contentResolver)
 
         bgExecutor.execute {
             val bitmap = loadBitmap(file)
@@ -111,7 +117,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
         val parameters = image.parameters ?: return
 
         dataStorage.saveDataPoint(
-                createDataPoint(parameters, viewingLux)
+                createDataPoint(state.displayName.value!!, parameters, viewingLux)
         )
 
         state.event.postValue(Event.DataPointSaved.asConsumable())
