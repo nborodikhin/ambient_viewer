@@ -1,8 +1,12 @@
 <resources>
+    <string name="share_authority">com.pinnaclesystems.ambientviewer.ShareDataPointProvider</string>
     <string name="app_name">AmbientViewer</string>
     <string name="load_image">Select image</string>
     <string name="load_last">Load Last</string>
     <string name="original">Original, scale %s, %d lux</string>
     <string name="adapted">Adapted, scale %s, %d lux, param %d</string>
     <string name="version">Version %s</string>
+    <string name="send_file">Send</string>
+    <string name="send_title">Send using</string>
+    <string name="send_file_text">Data points from %s</string>
 </resources>

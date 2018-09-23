@@ -8,6 +8,7 @@ import com.pinnacleimagingsystems.ambientviewer.storage.DataStorage
 
 class RoomDataStorage(applicationContext: Context): DataStorage {
     private val bgThread get() = Deps.bgExecutor
+    private val mainThread get() = Deps.mainExecutor
 
     private val db = createDB(applicationContext)
 
@@ -26,6 +27,18 @@ class RoomDataStorage(applicationContext: Context): DataStorage {
 
         bgThread.execute {
             db.dataPoints().addDataPoint(dbDataPoint)
+        }
+    }
+
+    override fun getAllDataPoints(onRetrieved: (List<DataPoint>) -> Unit) {
+        bgThread.execute {
+            val result = db.dataPoints().allDataPoints().map { dbDataPoint ->
+                dbDataPoint.toDataPoint()
+            }
+
+            mainThread.execute {
+                onRetrieved(result)
+            }
         }
     }
 }

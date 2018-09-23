@@ -1,27 +1,36 @@
 package com.pinnacleimagingsystems.ambientviewer.main
 
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
+import android.support.v4.content.ContextCompat
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import com.pinnacleimagingsystems.ambientviewer.BuildConfig
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.loadThumbnailBitmap
+import com.pinnacleimagingsystems.ambientviewer.share.ShareDataPointProvider
 import com.pinnacleimagingsystems.ambientviewer.toDisplayName
 import com.pinnacleimagingsystems.ambientviewer.viewer.ViewerActivity
 import java.io.File
+import java.text.DateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "MainActivity"
         const val PICK_IMAGE_CODE = 123
+        const val SEND_DATA_FILE_CODE = 124
+        const val REQUEST_PERMISSION = 125
     }
 
     private val views by lazy {
@@ -33,6 +42,7 @@ class MainActivity : AppCompatActivity() {
             val lastFileName = findViewById<TextView>(R.id.last_file_name)
             val lastFilePreview = findViewById<ImageView>(R.id.last_file_preview)
             val version = findViewById<TextView>(R.id.version)
+            val sendFile = findViewById<Button>(R.id.send_file)
         }
     }
 
@@ -49,7 +59,8 @@ class MainActivity : AppCompatActivity() {
         views.apply {
             loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
             loadLastButton.setOnClickListener { _ -> onLoadLastClicked() }
-            lastFileName.setOnClickListener { _ -> onLoadLastClicked() }
+            lastContainer.setOnClickListener { _ -> onLoadLastClicked() }
+            sendFile.setOnClickListener { _ -> onSendFileClicked() }
             version.text = getString(R.string.version, BuildConfig.VERSION_NAME)
         }
     }
@@ -109,8 +120,52 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         val intentData = data?.data
 
-        if (requestCode == PICK_IMAGE_CODE && resultCode == RESULT_OK && intentData != null) {
-            presenter.onFileSelected(intentData)
+        when(requestCode) {
+            PICK_IMAGE_CODE -> {
+                if (resultCode == RESULT_OK && intentData != null) {
+                    presenter.onFileSelected(intentData)
+                }
+            }
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when(requestCode) {
+            REQUEST_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    onSendFileClicked()
+                }
+            }
+        }
+    }
+
+    private fun onSendFileClicked() {
+        when (ContextCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE)) {
+            PackageManager.PERMISSION_GRANTED -> {}
+            PackageManager.PERMISSION_DENIED -> {
+                requestPermissions(arrayOf(WRITE_EXTERNAL_STORAGE), REQUEST_PERMISSION)
+                return
+            }
+        }
+
+        ShareDataPointProvider.prepareSharedFile { uri ->
+            sendAsAttachment(uri!!)
+        }
+    }
+
+    private fun sendAsAttachment(uri: Uri) {
+        val date = DateFormat.getDateInstance().format(Date())
+        val body = getString(R.string.send_file_text, date)
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_SUBJECT, body)
+            putExtra(Intent.EXTRA_TEXT, body)
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        val chooserIntent = Intent.createChooser(intent, getString(R.string.send_title))
+        startActivityForResult(chooserIntent, SEND_DATA_FILE_CODE)
     }
 }
