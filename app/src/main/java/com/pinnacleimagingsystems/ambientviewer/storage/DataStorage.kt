@@ -1,5 +1,8 @@
 package com.pinnacleimagingsystems.ambientviewer.storage
 
+import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.MutableLiveData
+
 private const val TAG = "DataStorage"
 
 data class DataPoint(

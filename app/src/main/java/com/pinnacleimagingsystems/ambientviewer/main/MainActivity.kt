@@ -14,11 +14,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import com.pinnacleimagingsystems.ambientviewer.BuildConfig
-import com.pinnacleimagingsystems.ambientviewer.R
-import com.pinnacleimagingsystems.ambientviewer.loadThumbnailBitmap
+import com.pinnacleimagingsystems.ambientviewer.*
 import com.pinnacleimagingsystems.ambientviewer.share.ShareDataPointProvider
-import com.pinnacleimagingsystems.ambientviewer.toDisplayName
+import com.pinnacleimagingsystems.ambientviewer.storage.DataStorage
 import com.pinnacleimagingsystems.ambientviewer.viewer.ViewerActivity
 import java.io.File
 import java.text.DateFormat
@@ -43,10 +41,13 @@ class MainActivity : AppCompatActivity() {
             val lastFilePreview = findViewById<ImageView>(R.id.last_file_preview)
             val version = findViewById<TextView>(R.id.version)
             val sendFile = findViewById<Button>(R.id.send_file)
+            val dataPointsText = findViewById<TextView>(R.id.data_points_text)
         }
     }
 
     lateinit var presenter: MainPresenter
+
+    lateinit var dataStorage: DataStorage
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         presenter = ViewModelProviders.of(this)[MainPresenterImpl::class.java].apply {
             init(application)
         }
+        dataStorage = Deps.dataStorage
 
         views.apply {
             loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
@@ -74,6 +76,11 @@ class MainActivity : AppCompatActivity() {
 
         presenter.state.event.observe(this, Observer { event -> event!!.consume(::onEvent) })
         presenter.state.lastFile.observe(this, Observer { lastFile -> onLastFileChanged(lastFile!!) })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDataPoints()
     }
 
     private fun onEvent(event: MainPresenter.State.Event) {
@@ -167,5 +174,12 @@ class MainActivity : AppCompatActivity() {
 
         val chooserIntent = Intent.createChooser(intent, getString(R.string.send_title))
         startActivityForResult(chooserIntent, SEND_DATA_FILE_CODE)
+    }
+
+    private fun updateDataPoints() {
+        dataStorage.getAllDataPoints { values ->
+            val count = values.size
+            views.dataPointsText.text = getString(R.string.data_points, count)
+        }
     }
 }
