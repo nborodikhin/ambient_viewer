@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.*
 import com.github.chrisbanes.photoview.PhotoView
+import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
 import kotlin.math.roundToInt
@@ -74,7 +75,7 @@ class ViewerActivity : AppCompatActivity() {
 
         lightSensor.value.observe(lifecycleOwner, Observer { _ -> onLightSensorChange() })
 
-        setSlider(presenter.state.curParameter.value!!)
+        views.parameterSlider.init(presenter.state.curParameter.value!!)
 
         postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { processIntent() }
     }
@@ -83,16 +84,17 @@ class ViewerActivity : AppCompatActivity() {
         views.content.postDelayed(block, delayMillis)
     }
 
-    private fun setSlider(parameter: Int) = with (views.parameterSlider) {
+    private fun SeekBar.init(parameter: Int) {
+        min = Deps.algorithm.meta.parameterMin()
+        max = Deps.algorithm.meta.parameterMax()
+
         setOnSeekBarChangeListener(null)
 
         setProgress(parameter, false)
 
         setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 presenter.onSetParameter(progress)
             }

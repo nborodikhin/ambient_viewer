@@ -22,8 +22,7 @@ object Deps {
 
     lateinit var prefs: SharedPreferences
 
-    fun createAlgorithm(): Algorithm
-        = AlgorithImpl()
+    lateinit var algorithm: Algorithm
 
     private lateinit var mainHandler: Handler
 
@@ -34,5 +33,6 @@ object Deps {
         dataStorage = RoomDataStorage(this.applicationContext)
         contentResolver = applicationContext.contentResolver
         prefs = applicationContext.getSharedPreferences("Prefs", Context.MODE_PRIVATE)
+        algorithm = AlgorithImpl()
     }
 }

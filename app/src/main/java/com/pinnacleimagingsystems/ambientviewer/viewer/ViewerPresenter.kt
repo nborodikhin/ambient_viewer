@@ -13,10 +13,6 @@ import com.pinnacleimagingsystems.ambientviewer.loadBitmap
 import com.pinnacleimagingsystems.ambientviewer.toDisplayName
 
 abstract class ViewerPresenter: ViewModel() {
-    companion object {
-        const val PARAMETER_DEFAULT = 5
-    }
-
     enum class State {
         UNINITIALIZED,
         LOADING,
@@ -46,7 +42,7 @@ abstract class ViewerPresenter: ViewModel() {
         val displayName by lazy { MutableLiveData<String>() }
         val state by lazy { MutableLiveData<State>().apply { value = State.UNINITIALIZED } }
 
-        val curParameter by lazy { MutableLiveData<Int>().apply { value = PARAMETER_DEFAULT } }
+        val curParameter by lazy { MutableLiveData<Int>() }
         val originalImage by lazy { MutableLiveData<Image>() }
         var workingImage: Image? = null
 
@@ -67,10 +63,14 @@ class ViewerPresenterImpl: ViewerPresenter() {
     private val contentResolver = Deps.contentResolver
     private val bgExecutor = Deps.bgExecutor
     private val mainExecutor = Deps.mainExecutor
-    private val algorithm = Deps.createAlgorithm()
+    private val algorithm = Deps.algorithm
     private val dataStorage = Deps.dataStorage
 
     private lateinit var workingBitmap: Bitmap
+
+    init {
+        state.curParameter.value = algorithm.meta.defaultParameter(0)
+    }
 
     override fun loadFile(file: String) {
         if (state.state.value!! != State.UNINITIALIZED) {

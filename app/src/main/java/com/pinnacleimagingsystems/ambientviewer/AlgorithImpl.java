@@ -3,6 +3,8 @@ package com.pinnacleimagingsystems.ambientviewer;
 import android.graphics.Color;
 
 public class AlgorithImpl implements Algorithm {
+    private static AlgorithmImplMeta meta = new AlgorithmImplMeta();
+
     private static final int DEGAMMA_SIZE = 256;
     private static final int GAMMA_SIZE = 1024;
 
@@ -93,5 +95,10 @@ public class AlgorithImpl implements Algorithm {
         }
 
         return delinearize(linear);
+    }
+
+    @Override
+    public AlgorithmImplMeta getMeta() {
+        return meta;
     }
 }
