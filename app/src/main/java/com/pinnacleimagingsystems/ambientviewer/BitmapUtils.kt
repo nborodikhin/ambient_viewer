@@ -5,7 +5,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.support.media.ExifInterface
 
-private fun Bitmap.asRotated(rotation: Int) = when(rotation) {
+fun Bitmap.asRotated(rotation: Int) = when (rotation % 360) {
     0 -> this
     else -> {
         val matrix = Matrix().apply { postRotate(rotation.toFloat()) }

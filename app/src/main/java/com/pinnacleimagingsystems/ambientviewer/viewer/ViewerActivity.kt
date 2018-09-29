@@ -3,6 +3,7 @@ package com.pinnacleimagingsystems.ambientviewer.viewer
 import android.arch.lifecycle.LifecycleOwner
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.Bundle
@@ -13,6 +14,7 @@ import com.github.chrisbanes.photoview.PhotoView
 import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.R
 import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
+import com.pinnacleimagingsystems.ambientviewer.asRotated
 import kotlin.math.roundToInt
 
 class ViewerActivity : AppCompatActivity() {
@@ -194,7 +196,17 @@ class ViewerActivity : AppCompatActivity() {
     }
 
     private fun onDisplayingImageChanged(image: ViewerPresenter.Image) {
-        views.photoView.replaceBitmap(image.bitmap)
+        val rotation = when (resources.configuration.orientation) {
+            Configuration.ORIENTATION_PORTRAIT -> 0
+            else -> 90
+        }
+        val bitmap = when(rotation) {
+            0, 180 -> image.bitmap
+            else -> {
+                image.bitmap.asRotated(90)
+            }
+        }
+        views.photoView.replaceBitmap(bitmap)
         updateLabel()
     }
 

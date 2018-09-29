@@ -24,7 +24,6 @@
         <activity
             android:name=".viewer.ViewerActivity"
             android:theme="@style/ViewerActivity"
-            android:screenOrientation="portrait"
             />
 
         <provider
