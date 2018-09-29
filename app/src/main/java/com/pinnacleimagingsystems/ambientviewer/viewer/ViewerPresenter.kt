@@ -54,7 +54,7 @@ abstract class ViewerPresenter: ViewModel() {
 
     val state = ViewerState()
 
-    abstract fun startFlow()
+    abstract fun startFlow(): Boolean
     abstract fun loadFile(file: String)
     abstract fun onSetParameter(parameter: Int)
     abstract fun onImageClicked()
@@ -76,9 +76,14 @@ class ViewerPresenterImpl: ViewerPresenter() {
         this.lightSensor = lightSensor
     }
 
-    override fun startFlow() {
-        val lux = lightSensor.value.value?.toInt() ?: 0
-        state.curParameter.value = algorithm.meta.defaultParameter(lux)
+    override fun startFlow(): Boolean {
+        if (state.curParameter.value == null) {
+            val lux = lightSensor.value.value?.toInt() ?: 0
+            state.curParameter.value = algorithm.meta.defaultParameter(lux)
+            return true
+        } else {
+            return false
+        }
     }
 
     override fun loadFile(file: String) {

@@ -81,9 +81,11 @@ class ViewerActivity : AppCompatActivity() {
     }
 
     private fun startFlow() {
-        presenter.startFlow()
+        val started = presenter.startFlow()
         views.parameterSlider.init(presenter.state.curParameter.value!!)
-        processIntent()
+        if (started) {
+            processIntent()
+        }
     }
 
     private fun postDelayed(delayMillis: Long, block: () -> Unit) {
