@@ -53,7 +53,9 @@ class ViewerActivity : AppCompatActivity() {
         lightSensor = (applicationContext as LightSensor.Holder).getLightSensor()
 
         val lifecycleOwner: LifecycleOwner = this@ViewerActivity
-        presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java]
+        presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java].apply {
+            init(lightSensor)
+        }
 
         setupFullscreen()
 
@@ -75,9 +77,13 @@ class ViewerActivity : AppCompatActivity() {
 
         lightSensor.value.observe(lifecycleOwner, Observer { _ -> onLightSensorChange() })
 
-        views.parameterSlider.init(presenter.state.curParameter.value!!)
+        postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { startFlow() }
+    }
 
-        postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { processIntent() }
+    private fun startFlow() {
+        presenter.startFlow()
+        views.parameterSlider.init(presenter.state.curParameter.value!!)
+        processIntent()
     }
 
     private fun postDelayed(delayMillis: Long, block: () -> Unit) {

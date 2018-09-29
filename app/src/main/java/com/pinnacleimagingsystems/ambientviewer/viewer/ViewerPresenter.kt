@@ -9,6 +9,7 @@ import android.support.annotation.WorkerThread
 import android.support.media.ExifInterface
 import com.pinnacleimagingsystems.ambientviewer.ConsumableEvent
 import com.pinnacleimagingsystems.ambientviewer.Deps
+import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
 import com.pinnacleimagingsystems.ambientviewer.loadBitmap
 import com.pinnacleimagingsystems.ambientviewer.toDisplayName
 
@@ -53,6 +54,7 @@ abstract class ViewerPresenter: ViewModel() {
 
     val state = ViewerState()
 
+    abstract fun startFlow()
     abstract fun loadFile(file: String)
     abstract fun onSetParameter(parameter: Int)
     abstract fun onImageClicked()
@@ -66,10 +68,17 @@ class ViewerPresenterImpl: ViewerPresenter() {
     private val algorithm = Deps.algorithm
     private val dataStorage = Deps.dataStorage
 
+    private lateinit var lightSensor: LightSensor
+
     private lateinit var workingBitmap: Bitmap
 
-    init {
-        state.curParameter.value = algorithm.meta.defaultParameter(0)
+    fun init(lightSensor: LightSensor) {
+        this.lightSensor = lightSensor
+    }
+
+    override fun startFlow() {
+        val lux = lightSensor.value.value?.toInt() ?: 0
+        state.curParameter.value = algorithm.meta.defaultParameter(lux)
     }
 
     override fun loadFile(file: String) {
