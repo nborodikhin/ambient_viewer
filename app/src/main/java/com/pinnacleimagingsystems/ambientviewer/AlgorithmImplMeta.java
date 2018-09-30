@@ -1,5 +1,7 @@
 package com.pinnacleimagingsystems.ambientviewer;
 
+import static java.lang.Math.log;
+
 class AlgorithmImplMeta implements Algorithm.Meta {
     @Override
     public int parameterMin() {
@@ -13,6 +15,9 @@ class AlgorithmImplMeta implements Algorithm.Meta {
 
     @Override
     public int defaultParameter(int lux) {
-        return 5;
+        lux = Math.min(2500, lux);
+        lux = Math.max(80, lux);
+
+        return (int) (2 * log(lux / 2500) / log(2) + 10.5);
     }
 }
