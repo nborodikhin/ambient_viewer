@@ -15,6 +15,7 @@ abstract class MainPresenter: ViewModel() {
     class State {
         sealed class Event {
             data class ViewFile(val file: String): Event()
+            data class ViewFiles(val uris: List<Uri>): Event()
 
             fun asConsumable(): ConsumableEvent<Event> = ConsumableEvent(this)
         }
@@ -28,6 +29,7 @@ abstract class MainPresenter: ViewModel() {
     val state = State()
 
     abstract fun onFileSelected(uri: Uri)
+    abstract fun onMultipleFilesSelected(uris: List<Uri>)
     abstract fun onLastFileClicked()
 }
 
@@ -88,6 +90,12 @@ class MainPresenterImpl: MainPresenter() {
                 deliverLoadResult(state, uri, copyResult)
             }
         }
+    }
+
+    override fun onMultipleFilesSelected(uris: List<Uri>) {
+        val count = uris.size
+        state.eventDescription.value = "loaded $count files"
+        state.event.value = State.Event.ViewFiles(uris).asConsumable()
     }
 
     override fun onLastFileClicked() {

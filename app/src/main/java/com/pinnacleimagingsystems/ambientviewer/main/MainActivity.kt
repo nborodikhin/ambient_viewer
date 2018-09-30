@@ -1,6 +1,7 @@
 package com.pinnacleimagingsystems.ambientviewer.main
 
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
@@ -29,19 +30,21 @@ class MainActivity : AppCompatActivity() {
         const val PICK_IMAGE_CODE = 123
         const val SEND_DATA_FILE_CODE = 124
         const val REQUEST_PERMISSION = 125
+        const val SELECT_MULIPLE_IMAGE_CODE = 126
     }
 
     private val views by lazy {
         object {
-            val loadImageButton = findViewById<View>(R.id.load_image)
-            val event = findViewById<TextView>(R.id.event)
-            val loadLastButton = findViewById<View>(R.id.load_last)
-            val lastContainer = findViewById<View>(R.id.last_file_container)
-            val lastFileName = findViewById<TextView>(R.id.last_file_name)
-            val lastFilePreview = findViewById<ImageView>(R.id.last_file_preview)
-            val version = findViewById<TextView>(R.id.version)
-            val sendFile = findViewById<Button>(R.id.send_file)
-            val dataPointsText = findViewById<TextView>(R.id.data_points_text)
+            val loadImageButton: View = findViewById(R.id.load_image)
+            val loadMultipleButton: View = findViewById(R.id.load_image1)
+            val event: TextView = findViewById(R.id.event)
+            val loadLastButton: View = findViewById(R.id.load_last)
+            val lastContainer: View = findViewById(R.id.last_file_container)
+            val lastFileName: TextView = findViewById(R.id.last_file_name)
+            val lastFilePreview: ImageView = findViewById(R.id.last_file_preview)
+            val version: TextView = findViewById(R.id.version)
+            val sendFile: Button = findViewById(R.id.send_file)
+            val dataPointsText: TextView = findViewById(R.id.data_points_text)
         }
     }
 
@@ -60,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         views.apply {
             loadImageButton.setOnClickListener { _ -> onLoadButtonClicked() }
+            loadMultipleButton.setOnClickListener { _ -> onLoadMultipleButtonClicked() }
             loadLastButton.setOnClickListener { _ -> onLoadLastClicked() }
             lastContainer.setOnClickListener { _ -> onLoadLastClicked() }
             sendFile.setOnClickListener { _ -> onSendFileClicked() }
@@ -91,6 +95,12 @@ class MainActivity : AppCompatActivity() {
                 }
                 startActivity(intent)
             }
+            is MainPresenter.State.Event.ViewFiles -> {
+                val intent = Intent(this, ViewerActivity::class.java).apply {
+                    putExtra(ViewerActivity.PARAM_FILE, event.uris[0].toString())
+                }
+                startActivity(intent)
+            }
         }
     }
 
@@ -102,6 +112,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         startActivityForResult(intent, PICK_IMAGE_CODE)
+    }
+
+    private fun onLoadMultipleButtonClicked() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+
+        if (intent.resolveActivity(packageManager) == null) {
+            return
+        }
+
+        startActivityForResult(Intent.createChooser(intent, getString(R.string.select_images)), SELECT_MULIPLE_IMAGE_CODE)
     }
 
     private fun onLoadLastClicked() {
@@ -133,7 +156,32 @@ class MainActivity : AppCompatActivity() {
                     presenter.onFileSelected(intentData)
                 }
             }
+            SELECT_MULIPLE_IMAGE_CODE -> {
+                val uris = getSelectedImages(data)
+                if (resultCode == Activity.RESULT_OK && uris.isNotEmpty()) {
+                    presenter.onMultipleFilesSelected(uris)
+                }
+            }
         }
+    }
+
+    private fun getSelectedImages(intent: Intent?): List<Uri> {
+        val result = mutableListOf<Uri>()
+        if (intent == null) {
+            return result
+        }
+
+        val clipData = intent.clipData
+        if (clipData != null && clipData.itemCount > 0) {
+            for (i in 0 until clipData.itemCount) {
+                val item = clipData.getItemAt(i) ?: continue
+                val uri = item.uri ?: continue
+
+                result.add(uri)
+            }
+        }
+
+        return result
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

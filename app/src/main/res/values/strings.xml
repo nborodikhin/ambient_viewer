@@ -2,6 +2,7 @@
     <string name="share_authority">com.pinnaclesystems.ambientviewer.ShareDataPointProvider</string>
     <string name="app_name">AmbientViewer</string>
     <string name="load_image">Select image</string>
+    <string name="select_images">Select images</string>
     <string name="load_last">Load Last</string>
     <string name="original">Original, scale %s, %d lux</string>
     <string name="adapted">Adapted, scale %s, %d lux, param %d</string>
