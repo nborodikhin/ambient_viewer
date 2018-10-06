@@ -176,11 +176,12 @@ class ViewerActivity : AppCompatActivity() {
     }
 
     private fun onEvent(event: ViewerPresenter.Event) {
-        when (event) {
-            ViewerPresenter.Event.NonSrgbWarning -> {
+        @Suppress("UNUSED_VARIABLE")
+        val dummy = when (event) {
+            is ViewerPresenter.Event.NonSrgbWarning -> {
                 Toast.makeText(this, "Unsupported colorspace (non-sRGB)", Toast.LENGTH_SHORT).show()
             }
-            ViewerPresenter.Event.DataPointSaved -> {
+            is ViewerPresenter.Event.DataPointSaved -> {
                 Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show()
                 with (views.saveCheckbox) {
                     isClickable = false
@@ -189,6 +190,13 @@ class ViewerActivity : AppCompatActivity() {
                         isClickable = true
                     }
                 }
+            }
+            is ViewerPresenter.Event.UnsupportedFileType -> {
+                Toast.makeText(this, "Unsupported file type: ${event.mimetype}", Toast.LENGTH_SHORT).show()
+            }
+            is ViewerPresenter.Event.ReadError -> {
+                Toast.makeText(this, "Error reading file: ${event.exception.message}", Toast.LENGTH_SHORT).show()
+                finish()
             }
         }
     }

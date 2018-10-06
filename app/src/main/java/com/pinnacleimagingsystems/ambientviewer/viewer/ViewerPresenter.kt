@@ -11,7 +11,9 @@ import com.pinnacleimagingsystems.ambientviewer.ConsumableEvent
 import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
 import com.pinnacleimagingsystems.ambientviewer.loadBitmap
+import com.pinnacleimagingsystems.ambientviewer.tasks.CopyTask
 import com.pinnacleimagingsystems.ambientviewer.toDisplayName
+import java.io.File
 
 abstract class ViewerPresenter: ViewModel() {
     enum class State {
@@ -35,6 +37,8 @@ abstract class ViewerPresenter: ViewModel() {
     sealed class Event {
         object NonSrgbWarning: Event()
         object DataPointSaved: Event()
+        data class UnsupportedFileType(val mimetype: String): Event()
+        data class ReadError(val exception: Exception): Event()
 
         fun asConsumable(): ConsumableEvent<Event> = ConsumableEvent(this)
     }
@@ -86,16 +90,45 @@ class ViewerPresenterImpl: ViewerPresenter() {
         }
     }
 
-    override fun loadFile(file: String) {
+    override fun loadFile(file_: String) {
+        var file = file_
+
         if (state.state.value!! != State.UNINITIALIZED) {
             return
         }
 
         state.state.value = State.LOADING
 
-        state.displayName.value = Uri.parse(file).toDisplayName(contentResolver)
+        val uri = Uri.parse(file)
+        val displayName = uri.toDisplayName(contentResolver)
+        state.displayName.value = displayName
+
+        val copy = CopyTask(Deps.applicationContext)
 
         bgExecutor.execute {
+            val copyResult = if (uri.scheme == "file" || file.startsWith('/')) {
+                val contentResolver = Deps.applicationContext.contentResolver
+                val mimeType = contentResolver.getType(uri)
+
+                CopyTask.CopyResult.Success("image/jpeg", File(file))
+            } else {
+                copy.copyFile(uri, displayName)
+            }
+
+            when (copyResult) {
+                is CopyTask.CopyResult.UnsupportedType -> {
+                    state.event.postValue(Event.UnsupportedFileType(copyResult.mimeType).asConsumable())
+                    return@execute
+                }
+                is CopyTask.CopyResult.Failure -> {
+                    state.event.postValue(Event.ReadError(copyResult.exception).asConsumable())
+                    return@execute
+                }
+                is CopyTask.CopyResult.Success -> {
+                    file = copyResult.file.absolutePath
+                }
+            }
+
             val bitmap = loadBitmap(file)
 
             val exif = ExifInterface(file)

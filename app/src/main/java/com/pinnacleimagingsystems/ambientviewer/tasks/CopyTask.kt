@@ -3,7 +3,6 @@ package com.pinnacleimagingsystems.ambientviewer.tasks
 import android.content.Context
 import android.net.Uri
 import android.support.annotation.WorkerThread
-import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -12,6 +11,11 @@ import java.io.InputStream
 class CopyTask(val context: Context) {
     companion object {
         private const val TAG = "CopyTask"
+
+        private var serial_ = 0
+        fun nextSerial() = serial_.also {
+            serial_++
+        }
     }
 
     sealed class CopyResult {
@@ -48,7 +52,7 @@ class CopyTask(val context: Context) {
     @WorkerThread
     private fun copyStream(stream: InputStream, fileName: String?): File {
         val cacheDir = context.cacheDir
-        val outputFile = File(cacheDir, fileName ?: "tempFile")
+        val outputFile = File(cacheDir, (fileName ?: "tempFile") + "_" + nextSerial())
 
         val buffer = ByteArray(1024 * 1024)
 
