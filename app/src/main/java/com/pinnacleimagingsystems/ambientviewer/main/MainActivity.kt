@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
     private val views by lazy {
         object {
             val loadImageButton: View = findViewById(R.id.load_image)
-            val loadMultipleButton: View = findViewById(R.id.load_image1)
+            val loadMultipleButton: View = findViewById(R.id.load_multiple_images)
             val event: TextView = findViewById(R.id.event)
             val loadLastButton: View = findViewById(R.id.load_last)
             val lastContainer: View = findViewById(R.id.last_file_container)
@@ -169,6 +169,12 @@ class MainActivity : AppCompatActivity() {
         val result = mutableListOf<Uri>()
         if (intent == null) {
             return result
+        }
+
+        val intentData = intent.data
+        if (intentData != null) {
+            // single image
+            return listOf(intentData)
         }
 
         val clipData = intent.clipData
