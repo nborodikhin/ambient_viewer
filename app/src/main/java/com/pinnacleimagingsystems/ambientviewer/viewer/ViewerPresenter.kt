@@ -106,12 +106,15 @@ class ViewerPresenterImpl: ViewerPresenter() {
         val copy = CopyTask(Deps.applicationContext)
 
         bgExecutor.execute {
+            val temporary: Boolean
             val copyResult = if (uri.scheme == "file" || file.startsWith('/')) {
+                temporary = false
                 val contentResolver = Deps.applicationContext.contentResolver
                 val mimeType = contentResolver.getType(uri)
 
-                CopyTask.CopyResult.Success("image/jpeg", File(file))
+                CopyTask.CopyResult.Success(mimeType ?: "image/jpeg", File(file))
             } else {
+                temporary = true
                 copy.copyFile(uri, displayName)
             }
 
@@ -129,9 +132,18 @@ class ViewerPresenterImpl: ViewerPresenter() {
                 }
             }
 
-            val bitmap = loadBitmap(file)
+            val bitmap: Bitmap
+            val exif: ExifInterface
 
-            val exif = ExifInterface(file)
+            try {
+                bitmap = loadBitmap(file)
+                exif = ExifInterface(file)
+            } finally {
+                if (temporary) {
+                    File(file).delete()
+                }
+            }
+
             val colorSpaceInt = exif.getAttributeInt(ExifInterface.TAG_COLOR_SPACE, ExifInterface.COLOR_SPACE_UNCALIBRATED)
             if (colorSpaceInt != ExifInterface.COLOR_SPACE_S_RGB) {
                 state.event.postValue(Event.NonSrgbWarning.asConsumable())
