@@ -90,14 +90,16 @@ class MainActivity : AppCompatActivity() {
     private fun onEvent(event: MainPresenter.State.Event) {
         when(event) {
             is MainPresenter.State.Event.ViewFile -> {
+                val files = arrayOf(event.file)
                 val intent = Intent(this, ViewerActivity::class.java).apply {
-                    putExtra(ViewerActivity.PARAM_FILE, event.file)
+                    putExtra(ViewerActivity.PARAM_FILES, files)
                 }
                 startActivity(intent)
             }
             is MainPresenter.State.Event.ViewFiles -> {
+                val files = event.uris.map { it.toString() }.toTypedArray()
                 val intent = Intent(this, ViewerActivity::class.java).apply {
-                    putExtra(ViewerActivity.PARAM_FILE, event.uris[0].toString())
+                    putExtra(ViewerActivity.PARAM_FILES, files)
                 }
                 startActivity(intent)
             }

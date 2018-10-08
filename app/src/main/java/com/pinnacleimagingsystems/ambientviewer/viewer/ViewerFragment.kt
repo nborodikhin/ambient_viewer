@@ -28,6 +28,16 @@ class ViewerFragment: Fragment() {
 
         private const val INITIAL_PARAMETER_READ_TIMEOUT = 200L
         private const val CHECKBOX_RESET_DELAY = 1000L
+
+        fun create(file: String) = ViewerFragment().apply {
+            arguments = Bundle().apply {
+                putString(ViewerFragment.PARAM_FILE, file)
+            }
+        }
+    }
+
+    interface Host {
+        fun onViewerError(file: String?)
     }
 
     private fun <T: View> findViewById(id: Int) = view!!.findViewById<T>(id)
@@ -54,7 +64,7 @@ class ViewerFragment: Fragment() {
             get() = resources.getInteger(android.R.integer.config_longAnimTime).toLong()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return inflater.inflate(R.layout.activity_viewer, container, false)
+        return inflater.inflate(R.layout.fragment_viewer, container, false)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -201,7 +211,7 @@ class ViewerFragment: Fragment() {
             }
             is ViewerPresenter.Event.ReadError -> {
                 Toast.makeText(activity, "Error reading file: ${event.exception.message}", Toast.LENGTH_SHORT).show()
-                activity!!.finish()
+                (activity!! as Host).onViewerError(presenter.state.filePath)
             }
         }
     }

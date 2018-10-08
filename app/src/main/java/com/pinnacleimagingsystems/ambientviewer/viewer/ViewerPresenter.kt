@@ -49,6 +49,7 @@ abstract class ViewerPresenter: ViewModel() {
 
         val curParameter by lazy { MutableLiveData<Int>() }
         val originalImage by lazy { MutableLiveData<Image>() }
+        var filePath: String? = null
         var workingImage: Image? = null
 
         val displayingImage by lazy { MutableLiveData<Image>() }
@@ -91,6 +92,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
     }
 
     override fun loadFile(file_: String) {
+        state.filePath = file_
         var file = file_
 
         if (state.state.value!! != State.UNINITIALIZED) {
