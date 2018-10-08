@@ -91,17 +91,18 @@ class ViewerPresenterImpl: ViewerPresenter() {
         }
     }
 
-    override fun loadFile(file_: String) {
-        state.filePath = file_
-        var file = file_
+    override fun loadFile(file: String) {
+        state.filePath = file
 
         if (state.state.value!! != State.UNINITIALIZED) {
             return
         }
 
+        var fileName = file
+
         state.state.value = State.LOADING
 
-        val uri = Uri.parse(file)
+        val uri = Uri.parse(fileName)
         val displayName = uri.toDisplayName(contentResolver)
         state.displayName.value = displayName
 
@@ -109,12 +110,12 @@ class ViewerPresenterImpl: ViewerPresenter() {
 
         bgExecutor.execute {
             val temporary: Boolean
-            val copyResult = if (uri.scheme == "file" || file.startsWith('/')) {
+            val copyResult = if (uri.scheme == "file" || fileName.startsWith('/')) {
                 temporary = false
                 val contentResolver = Deps.applicationContext.contentResolver
                 val mimeType = contentResolver.getType(uri)
 
-                CopyTask.CopyResult.Success(mimeType ?: "image/jpeg", File(file))
+                CopyTask.CopyResult.Success(mimeType ?: "image/jpeg", File(fileName))
             } else {
                 temporary = true
                 copy.copyFile(uri, displayName)
@@ -130,7 +131,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
                     return@execute
                 }
                 is CopyTask.CopyResult.Success -> {
-                    file = copyResult.file.absolutePath
+                    fileName = copyResult.file.absolutePath
                 }
             }
 
@@ -138,11 +139,11 @@ class ViewerPresenterImpl: ViewerPresenter() {
             val exif: ExifInterface
 
             try {
-                bitmap = loadBitmap(file)
-                exif = ExifInterface(file)
+                bitmap = loadBitmap(fileName)
+                exif = ExifInterface(fileName)
             } finally {
                 if (temporary) {
-                    File(file).delete()
+                    File(fileName).delete()
                 }
             }
 
@@ -184,7 +185,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
         state.event.postValue(Event.DataPointSaved.asConsumable())
     }
 
-    fun processImage(parameter: Int) {
+    private fun processImage(parameter: Int) {
         state.curParameter.postValue(parameter)
 
         bgExecutor.execute {
