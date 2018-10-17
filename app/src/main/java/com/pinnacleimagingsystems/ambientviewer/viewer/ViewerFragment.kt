@@ -118,18 +118,20 @@ class ViewerFragment: Fragment() {
     }
 
     private fun SeekBar.init(parameter: Int) {
-        min = Deps.algorithm.meta.parameterMin()
-        max = Deps.algorithm.meta.parameterMax()
+        val (min, range) = with (Deps.algorithm.meta) {
+            parameterMin() to parameterMax() - parameterMin()
+        }
+        max = range
 
         setOnSeekBarChangeListener(null)
 
-        setProgress(parameter, false)
+        progress = parameter
 
         setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                presenter.onSetParameter(progress)
+                presenter.onSetParameter(progress + min)
             }
         })
     }
