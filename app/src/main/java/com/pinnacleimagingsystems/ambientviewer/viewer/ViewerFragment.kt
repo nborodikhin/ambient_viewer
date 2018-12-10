@@ -38,6 +38,7 @@ class ViewerFragment: Fragment() {
 
     interface Host {
         fun onViewerError(file: String?)
+        fun setFragmentViewTouchListener(view: View)
     }
 
     private fun <T: View> findViewById(id: Int) = view!!.findViewById<T>(id)
@@ -52,6 +53,8 @@ class ViewerFragment: Fragment() {
         val parameterSlider: SeekBar = findViewById(R.id.parameter_slider)
         val saveCheckbox: CheckBox = findViewById(R.id.save_checkbox)
     } }
+
+    private val host get() = activity!! as Host
 
     private lateinit var presenter: ViewerPresenter
 
@@ -98,6 +101,8 @@ class ViewerFragment: Fragment() {
         }
 
         lightSensor.value.observe(lifecycleOwner, Observer { _ -> onLightSensorChange() })
+
+        host.setFragmentViewTouchListener(views.photoView)
     }
 
     override fun onStart() {
@@ -213,7 +218,7 @@ class ViewerFragment: Fragment() {
             }
             is ViewerPresenter.Event.ReadError -> {
                 Toast.makeText(activity, "Error reading file: ${event.exception.message}", Toast.LENGTH_SHORT).show()
-                (activity!! as Host).onViewerError(presenter.state.filePath)
+                host.onViewerError(presenter.state.filePath)
             }
         }
     }

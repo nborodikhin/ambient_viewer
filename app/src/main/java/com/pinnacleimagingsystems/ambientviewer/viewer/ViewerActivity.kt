@@ -2,7 +2,10 @@ package com.pinnacleimagingsystems.ambientviewer.viewer
 
 import android.arch.lifecycle.*
 import android.os.Bundle
+import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.app.FragmentTransaction
+import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import com.pinnacleimagingsystems.ambientviewer.ConsumableEvent
@@ -25,6 +28,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
     interface Presenter: LifecycleObserver {
         val latestCommand: LiveData<ConsumableEvent<Command>>
         val currentFile: LiveData<String>
+        val files: Array<String>
 
         fun hasPrev(): Boolean
         fun hasNext(): Boolean
@@ -37,7 +41,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
 
     class PresenterImpl: Presenter, ViewModel() {
         val uninitializedFiles = arrayOf<String>()
-        private var files = uninitializedFiles
+        override var files = uninitializedFiles
         private val banned = mutableSetOf<String>()
 
         private var curIndex = 0
@@ -137,9 +141,11 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
 
     private val views by lazy {
         object {
-            val fragmentContent = findViewById<View>(R.id.fragment_content)
-            val prevClicker = findViewById<View>(R.id.prev_clicker)
-            val nextClicker = findViewById<View>(R.id.next_clicker)
+            val mainLayout: View = findViewById(R.id.main_layout)
+            val viewPager: ViewPager = findViewById(R.id.view_pager)
+            val fragmentContent: View = findViewById(R.id.fragment_content)
+            val prevClicker: View = findViewById(R.id.prev_clicker)
+            val nextClicker: View = findViewById(R.id.next_clicker)
         }
     }
 
@@ -170,6 +176,39 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
 
         views.prevClicker.setOnClickListener { presenter.viewPrev() }
         views.nextClicker.setOnClickListener { presenter.viewNext() }
+
+        val fragmentAdapter = object : FragmentPagerAdapter(supportFragmentManager) {
+            override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index])
+
+            override fun getCount() = presenter.files.size
+        }
+        views.viewPager.adapter = fragmentAdapter
+
+        views.viewPager.addOnPageChangeListener(object: ViewPager.OnPageChangeListener {
+            fun getFragment(id: Int): Fragment? {
+                val fragmentTag = makeFragmentName(views.viewPager.id, fragmentAdapter.getItemId(id))
+                return supportFragmentManager.findFragmentByTag(fragmentTag)
+            }
+
+            override fun onPageScrollStateChanged(p0: Int) {
+            }
+
+            override fun onPageScrolled(p0: Int, p1: Float, p2: Int) {
+            }
+
+            override fun onPageSelected(p0: Int) {
+                //(getFragment(p0) as ViewerFragment?)?.
+            }
+
+            private fun makeFragmentName(viewId: Int, id: Long): String {
+                return "android:switcher: $viewId:$id"
+            }
+
+        })
+    }
+
+    override fun setFragmentViewTouchListener(view: View) {
+        //view.setOnTouchListener { _, event -> detector.onTouchEvent(event) }
     }
 
     private fun onCommand(command: Command?) {
@@ -182,7 +221,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             }
             is Command.OpenViewer -> {
                 val file = command.file
-                openFragment(file)
+                //openFragment(file)
             }
         }
     }
