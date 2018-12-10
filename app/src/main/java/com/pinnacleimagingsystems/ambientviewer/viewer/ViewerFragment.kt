@@ -23,22 +23,23 @@ import kotlin.math.roundToInt
 class ViewerFragment: Fragment() {
     companion object {
         const val PARAM_FILE = "file"
+        const val PARAM_ID = "id"
 
         private const val MAXIMUM_SCALE = 64.0f
 
         private const val INITIAL_PARAMETER_READ_TIMEOUT = 200L
         private const val CHECKBOX_RESET_DELAY = 1000L
 
-        fun create(file: String) = ViewerFragment().apply {
+        fun create(file: String, id: Int) = ViewerFragment().apply {
             arguments = Bundle().apply {
                 putString(ViewerFragment.PARAM_FILE, file)
+                putInt(ViewerFragment.PARAM_ID, id)
             }
         }
     }
 
     interface Host {
         fun onViewerError(file: String?)
-        fun setFragmentViewTouchListener(view: View)
     }
 
     private fun <T: View> findViewById(id: Int) = view!!.findViewById<T>(id)
@@ -55,6 +56,9 @@ class ViewerFragment: Fragment() {
     } }
 
     private val host get() = activity!! as Host
+
+    var fileId: Int = -1
+        private set
 
     private lateinit var presenter: ViewerPresenter
 
@@ -77,6 +81,8 @@ class ViewerFragment: Fragment() {
         presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java].apply {
             init(lightSensor)
         }
+
+        fileId = arguments!!.getInt(PARAM_ID)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -101,13 +107,16 @@ class ViewerFragment: Fragment() {
         }
 
         lightSensor.value.observe(lifecycleOwner, Observer { _ -> onLightSensorChange() })
-
-        host.setFragmentViewTouchListener(views.photoView)
     }
 
-    override fun onStart() {
-        super.onStart()
-        postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { startFlow() }
+    var initialized: Boolean = false
+
+    fun onVisible() {
+        if (!initialized) {
+            initialized
+            //postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { startFlow() }
+            startFlow()
+        }
     }
 
     private fun startFlow() {

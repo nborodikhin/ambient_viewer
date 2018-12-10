@@ -150,6 +150,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
     }
 
     lateinit var presenter: Presenter
+    lateinit var fragmentAdapter: FragmentPagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -177,38 +178,47 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
         views.prevClicker.setOnClickListener { presenter.viewPrev() }
         views.nextClicker.setOnClickListener { presenter.viewNext() }
 
-        val fragmentAdapter = object : FragmentPagerAdapter(supportFragmentManager) {
-            override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index])
-
+        fragmentAdapter = object : FragmentPagerAdapter(supportFragmentManager) {
+            override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index], index)
             override fun getCount() = presenter.files.size
         }
-        views.viewPager.adapter = fragmentAdapter
 
-        views.viewPager.addOnPageChangeListener(object: ViewPager.OnPageChangeListener {
-            fun getFragment(id: Int): Fragment? {
-                val fragmentTag = makeFragmentName(views.viewPager.id, fragmentAdapter.getItemId(id))
-                return supportFragmentManager.findFragmentByTag(fragmentTag)
+        views.viewPager.run {
+            adapter = fragmentAdapter
+
+            val pageChangeListener = object : ViewPager.OnPageChangeListener {
+                override fun onPageScrollStateChanged(p0: Int) {}
+
+                override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+                    val visiblePosition = when {
+                        positionOffsetPixels == 0 -> currentItem
+                        currentItem == position -> currentItem + 1
+                        else -> currentItem - 1
+                    }
+                    post { onPageVisible(visiblePosition) }
+                }
+
+                override fun onPageSelected(position: Int) {
+                    post { onPageVisible(position) }
+                }
             }
-
-            override fun onPageScrollStateChanged(p0: Int) {
-            }
-
-            override fun onPageScrolled(p0: Int, p1: Float, p2: Int) {
-            }
-
-            override fun onPageSelected(p0: Int) {
-                //(getFragment(p0) as ViewerFragment?)?.
-            }
-
-            private fun makeFragmentName(viewId: Int, id: Long): String {
-                return "android:switcher: $viewId:$id"
-            }
-
-        })
+            addOnPageChangeListener(pageChangeListener)
+        }
     }
 
-    override fun setFragmentViewTouchListener(view: View) {
-        //view.setOnTouchListener { _, event -> detector.onTouchEvent(event) }
+    fun onPageVisible(position: Int) {
+        (getFragment(position) as? (ViewerFragment))?.apply {
+            onVisible()
+        }
+    }
+
+    private fun getFragment(position: Int): Fragment? {
+        fun makeFragmentName(viewId: Int, id: Long): String {
+            return "android:switcher:$viewId:$id"
+        }
+
+        val fragmentTag = makeFragmentName(views.viewPager.id, fragmentAdapter.getItemId(position))
+        return supportFragmentManager.findFragmentByTag(fragmentTag)
     }
 
     private fun onCommand(command: Command?) {
@@ -233,7 +243,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
 
     private fun openFragment(file: String) {
         with (supportFragmentManager) {
-            val fragment = ViewerFragment.create(file)
+            val fragment = ViewerFragment.create(file, 0)
 
             beginTransaction()
                     .replace(views.fragmentContent.id, fragment, FRAGMENT_TAG)
