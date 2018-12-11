@@ -14,10 +14,21 @@ android {
         versionName "0.92"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        release {
+            // You need to specify either an absolute path or include the
+            // keystore file in the same directory as the build.gradle file.
+            storeFile file("dummy.jks")
+            storePassword "123456"
+            keyAlias "key0"
+            keyPassword "123456"
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
     buildToolsVersion '28.0.2'
