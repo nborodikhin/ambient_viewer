@@ -27,7 +27,6 @@ class ViewerFragment: Fragment() {
 
         private const val MAXIMUM_SCALE = 64.0f
 
-        private const val INITIAL_PARAMETER_READ_TIMEOUT = 200L
         private const val CHECKBOX_RESET_DELAY = 1000L
 
         fun create(file: String, id: Int) = ViewerFragment().apply {
@@ -114,7 +113,6 @@ class ViewerFragment: Fragment() {
     fun onVisible() {
         if (!initialized) {
             initialized
-            //postDelayed(INITIAL_PARAMETER_READ_TIMEOUT) { startFlow() }
             startFlow()
         }
     }

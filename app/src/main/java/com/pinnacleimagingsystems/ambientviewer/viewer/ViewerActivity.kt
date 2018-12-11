@@ -19,7 +19,6 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
     }
 
     sealed class Command {
-        data class OpenViewer(val file: String): Command()
         object CloseActivity: Command()
 
         fun asConsumable() = ConsumableEvent(this)
@@ -69,8 +68,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             post(Command.CloseActivity)
         }
 
-        private fun openViewer() {
-            post(Command.OpenViewer(files[curIndex]))
+        private fun updateCurrentFile() {
             currentFile.postValue(files[curIndex])
         }
 
@@ -120,7 +118,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             val index = nextIndex()
             if (index != null) {
                 curIndex = index
-                openViewer()
+                updateCurrentFile()
             } else {
                 exit()
             }
@@ -130,7 +128,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             val index = prevIndex()
             if (index != null) {
                 curIndex = index
-                openViewer()
+                updateCurrentFile()
             }
         }
 
@@ -144,8 +142,6 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             val mainLayout: View = findViewById(R.id.main_layout)
             val viewPager: ViewPager = findViewById(R.id.view_pager)
             val fragmentContent: View = findViewById(R.id.fragment_content)
-            val prevClicker: View = findViewById(R.id.prev_clicker)
-            val nextClicker: View = findViewById(R.id.next_clicker)
         }
     }
 
@@ -169,14 +165,6 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
                 this,
                 Observer { value -> value?.consume(this@ViewerActivity::onCommand) }
         )
-
-        presenter.currentFile.observe(
-                this,
-                Observer { _ -> updateButtons() }
-        )
-
-        views.prevClicker.setOnClickListener { presenter.viewPrev() }
-        views.nextClicker.setOnClickListener { presenter.viewNext() }
 
         fragmentAdapter = object : FragmentPagerAdapter(supportFragmentManager) {
             override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index], index)
@@ -229,16 +217,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             is Command.CloseActivity -> {
                 finish()
             }
-            is Command.OpenViewer -> {
-                val file = command.file
-                //openFragment(file)
-            }
         }
-    }
-
-    private fun updateButtons() {
-        views.prevClicker.visibility = if (presenter.hasPrev()) View.VISIBLE else View.GONE
-        views.nextClicker.visibility = if (presenter.hasNext()) View.VISIBLE else View.GONE
     }
 
     private fun openFragment(file: String) {
