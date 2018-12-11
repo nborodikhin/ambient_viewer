@@ -112,7 +112,7 @@ class ViewerFragment: Fragment() {
 
     fun onVisible() {
         if (!initialized) {
-            initialized
+            initialized = true
             startFlow()
         }
     }

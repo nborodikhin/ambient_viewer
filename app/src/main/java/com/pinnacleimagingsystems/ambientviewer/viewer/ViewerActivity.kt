@@ -3,8 +3,9 @@ package com.pinnacleimagingsystems.ambientviewer.viewer
 import android.arch.lifecycle.*
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentPagerAdapter
+import android.support.v4.app.FragmentStatePagerAdapter
 import android.support.v4.app.FragmentTransaction
+import android.support.v4.view.PagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
 import android.view.View
@@ -146,7 +147,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
     }
 
     lateinit var presenter: Presenter
-    lateinit var fragmentAdapter: FragmentPagerAdapter
+    lateinit var fragmentAdapter: PagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -166,7 +167,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
                 Observer { value -> value?.consume(this@ViewerActivity::onCommand) }
         )
 
-        fragmentAdapter = object : FragmentPagerAdapter(supportFragmentManager) {
+        fragmentAdapter = object : FragmentStatePagerAdapter(supportFragmentManager) {
             override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index], index)
             override fun getCount() = presenter.files.size
         }
@@ -201,12 +202,8 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
     }
 
     private fun getFragment(position: Int): Fragment? {
-        fun makeFragmentName(viewId: Int, id: Long): String {
-            return "android:switcher:$viewId:$id"
-        }
-
-        val fragmentTag = makeFragmentName(views.viewPager.id, fragmentAdapter.getItemId(position))
-        return supportFragmentManager.findFragmentByTag(fragmentTag)
+        return supportFragmentManager.fragments
+                .find { fragment -> (fragment as? ViewerFragment)?.fileId == position}
     }
 
     private fun onCommand(command: Command?) {
