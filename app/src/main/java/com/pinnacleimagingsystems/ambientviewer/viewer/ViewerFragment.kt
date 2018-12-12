@@ -78,7 +78,7 @@ class ViewerFragment: Fragment() {
         lightSensor = (context!!.applicationContext as LightSensor.Holder).getLightSensor()
 
         presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java].apply {
-            init(lightSensor)
+            init(lightSensor, activity!!.windowManager)
         }
 
         fileId = arguments!!.getInt(PARAM_ID)

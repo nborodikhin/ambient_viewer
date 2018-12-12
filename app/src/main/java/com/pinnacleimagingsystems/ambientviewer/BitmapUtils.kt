@@ -13,10 +13,23 @@ fun Bitmap.asRotated(rotation: Int) = when (rotation % 360) {
     }
 }
 
-fun loadBitmap(file: String): Bitmap {
+fun loadBitmap(file: String, maxSize: Int = 0): Bitmap {
     val exif = ExifInterface(file)
     val rotationDegrees = exif.rotationDegrees
-    val bitmap = BitmapFactory.decodeFile(file)
+
+    val options = BitmapFactory.Options()
+
+    if (maxSize > 0) {
+        options.inJustDecodeBounds = true
+        BitmapFactory.decodeFile(file, options)
+
+        val maxBitmapDimension = maxOf(options.outWidth, options.outHeight)
+
+        options.inJustDecodeBounds = false
+        options.inSampleSize = maxOf(1, maxBitmapDimension / maxSize)
+    }
+
+    val bitmap = BitmapFactory.decodeFile(file, options)
 
     return bitmap.asRotated(rotationDegrees)
 }

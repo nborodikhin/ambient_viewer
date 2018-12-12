@@ -7,6 +7,8 @@ import android.net.Uri
 import android.support.annotation.AnyThread
 import android.support.annotation.WorkerThread
 import android.support.media.ExifInterface
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import com.pinnacleimagingsystems.ambientviewer.ConsumableEvent
 import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.als.LightSensor
@@ -74,11 +76,16 @@ class ViewerPresenterImpl: ViewerPresenter() {
     private val dataStorage = Deps.dataStorage
 
     private lateinit var lightSensor: LightSensor
+    private var screenMaxSize: Int = 0
 
     private lateinit var workingBitmap: Bitmap
 
-    fun init(lightSensor: LightSensor) {
+    fun init(lightSensor: LightSensor, windowsManager: WindowManager) {
         this.lightSensor = lightSensor
+
+        val displayMetrics = DisplayMetrics()
+        windowsManager.defaultDisplay.getMetrics(displayMetrics)
+        screenMaxSize = maxOf(displayMetrics.widthPixels, displayMetrics.heightPixels)
     }
 
     override fun startFlow(): Boolean {
@@ -139,7 +146,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
             val exif: ExifInterface
 
             try {
-                bitmap = loadBitmap(fileName)
+                bitmap = loadBitmap(fileName, screenMaxSize)
                 exif = ExifInterface(fileName)
             } finally {
                 if (temporary) {
