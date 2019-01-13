@@ -4,7 +4,6 @@ import android.arch.lifecycle.*
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentStatePagerAdapter
-import android.support.v4.app.FragmentTransaction
 import android.support.v4.view.PagerAdapter
 import android.support.v4.view.ViewPager
 import android.support.v7.app.AppCompatActivity
@@ -15,6 +14,7 @@ import com.pinnacleimagingsystems.ambientviewer.R
 class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
     companion object {
         const val PARAM_FILES = "files"
+        const val PARAM_VIEWER_MODE = "continuous"
 
         private const val FRAGMENT_TAG = "viewerFragment"
     }
@@ -157,6 +157,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
         presenter = ViewModelProviders.of(this)[PresenterImpl::class.java].apply {
             init(intent.getStringArrayExtra(PARAM_FILES))
         }
+        val viewMode = intent.getBooleanExtra(PARAM_VIEWER_MODE, false)
 
         setupFullscreen()
 
@@ -168,7 +169,7 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
         )
 
         fragmentAdapter = object : FragmentStatePagerAdapter(supportFragmentManager) {
-            override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index], index)
+            override fun getItem(index: Int) = ViewerFragment.create(presenter.files[index], index, viewMode)
             override fun getCount() = presenter.files.size
         }
 
@@ -214,20 +215,6 @@ class ViewerActivity : AppCompatActivity(), ViewerFragment.Host {
             is Command.CloseActivity -> {
                 finish()
             }
-        }
-    }
-
-    private fun openFragment(file: String) {
-        with (supportFragmentManager) {
-            val fragment = ViewerFragment.create(file, 0)
-
-            beginTransaction()
-                    .replace(views.fragmentContent.id, fragment, FRAGMENT_TAG)
-                    .setCustomAnimations(
-                            FragmentTransaction.TRANSIT_FRAGMENT_FADE,
-                            FragmentTransaction.TRANSIT_FRAGMENT_FADE
-                    )
-                    .commit()
         }
     }
 

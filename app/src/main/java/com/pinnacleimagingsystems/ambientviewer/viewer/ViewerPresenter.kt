@@ -25,6 +25,13 @@ abstract class ViewerPresenter: ViewModel() {
         PROCESSING,
     }
 
+    fun State?.notLoaded() = when (this) {
+        State.UNINITIALIZED,
+        State.LOADING,
+        null -> true
+        else -> false
+    }
+
     enum class ImageType {
         ORIGINAL,
         WORKING
@@ -41,6 +48,7 @@ abstract class ViewerPresenter: ViewModel() {
         object DataPointSaved: Event()
         data class UnsupportedFileType(val mimetype: String): Event()
         data class ReadError(val exception: Exception): Event()
+        data class LightSensorParameterComputed(val parameter: Float): Event()
 
         fun asConsumable(): ConsumableEvent<Event> = ConsumableEvent(this)
     }
@@ -63,9 +71,10 @@ abstract class ViewerPresenter: ViewModel() {
 
     abstract fun startFlow(): Boolean
     abstract fun loadFile(file: String)
-    abstract fun onSetParameter(parameter: Float)
+    abstract fun onSetParameter(parameter: Float, manualInput: Boolean)
     abstract fun onImageClicked()
     abstract fun onSaveButtonClicked(image: Image, viewingLux: Int)
+    abstract fun onLightSensorChanged()
 }
 
 class ViewerPresenterImpl: ViewerPresenter() {
@@ -82,12 +91,15 @@ class ViewerPresenterImpl: ViewerPresenter() {
 
     private var currentProcessingId = 0
 
-    fun init(lightSensor: LightSensor, windowsManager: WindowManager) {
+    private var enableContinuousUpdate = false
+
+    fun init(lightSensor: LightSensor, windowsManager: WindowManager, enableContinuousUpdate: Boolean) {
         this.lightSensor = lightSensor
 
         val displayMetrics = DisplayMetrics()
         windowsManager.defaultDisplay.getMetrics(displayMetrics)
         screenMaxSize = maxOf(displayMetrics.widthPixels, displayMetrics.heightPixels)
+        this.enableContinuousUpdate = enableContinuousUpdate
     }
 
     override fun startFlow(): Boolean {
@@ -98,6 +110,16 @@ class ViewerPresenterImpl: ViewerPresenter() {
         } else {
             return false
         }
+    }
+
+    override fun onLightSensorChanged() {
+        if (!enableContinuousUpdate || state.state.value.notLoaded()) {
+            return
+        }
+
+        val lux = lightSensor.value.value?.toInt() ?: 0
+        val parameter = algorithm.meta.defaultParameter(lux)
+        state.event.postValue(Event.LightSensorParameterComputed(parameter = parameter).asConsumable())
     }
 
     override fun loadFile(file: String) {
@@ -167,7 +189,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
             state.originalImage.postValue(originalImage)
 
             mainExecutor.execute {
-                processImage(state.curParameter.value!!)
+                processImage(state.curParameter.value!!, true)
             }
 
             state.displayingImage.postValue(originalImage)
@@ -178,7 +200,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
         switchDisplayingImages()
     }
 
-    override fun onSetParameter(parameter: Float) {
+    override fun onSetParameter(parameter: Float, manualInput: Boolean) {
         // note: direct comparing floats
         if (state.curParameter.value == parameter) {
             return
@@ -186,7 +208,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
 
         state.state.value = State.PROCESSING
 
-        processImage(parameter)
+        processImage(parameter, setWorking = manualInput)
     }
 
     override fun onSaveButtonClicked(image: Image, viewingLux: Int) {
@@ -199,7 +221,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
         state.event.postValue(Event.DataPointSaved.asConsumable())
     }
 
-    private fun processImage(parameter: Float) {
+    private fun processImage(parameter: Float, setWorking: Boolean) {
         state.curParameter.postValue(parameter)
 
         currentProcessingId++
@@ -222,12 +244,21 @@ class ViewerPresenterImpl: ViewerPresenter() {
 
             val image = Image(ImageType.WORKING, workingBitmap, parameters)
             state.workingImage = image
-            setDisplayingImage(ViewerPresenter.ImageType.WORKING)
+            onWorkingImageReady(setWorking)
 
             state.state.apply {
                 postValue(State.DISPLAYING)
             }
         }
+    }
+
+    @AnyThread
+    fun onWorkingImageReady(setWorking: Boolean) {
+        val currentImage = state.displayingImage.value ?: return
+
+        if (!setWorking && currentImage.type == ImageType.ORIGINAL) return
+
+        setDisplayingImage(ViewerPresenter.ImageType.WORKING)
     }
 
     @AnyThread

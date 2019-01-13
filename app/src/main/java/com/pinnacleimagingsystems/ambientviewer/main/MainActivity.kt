@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.support.v4.content.ContextCompat
 import android.view.View
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import com.pinnacleimagingsystems.ambientviewer.*
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
             val version: TextView = findViewById(R.id.version)
             val sendFile: Button = findViewById(R.id.send_file)
             val dataPointsText: TextView = findViewById(R.id.data_points_text)
+            val viewerMode: CheckBox = findViewById(R.id.viewer_mode)
         }
     }
 
@@ -93,6 +95,7 @@ class MainActivity : AppCompatActivity() {
                 val files = arrayOf(event.file)
                 val intent = Intent(this, ViewerActivity::class.java).apply {
                     putExtra(ViewerActivity.PARAM_FILES, files)
+                    putExtra(ViewerActivity.PARAM_VIEWER_MODE, views.viewerMode.isChecked)
                 }
                 startActivity(intent)
             }
@@ -100,6 +103,7 @@ class MainActivity : AppCompatActivity() {
                 val files = event.uris.map { it.toString() }.toTypedArray()
                 val intent = Intent(this, ViewerActivity::class.java).apply {
                     putExtra(ViewerActivity.PARAM_FILES, files)
+                    putExtra(ViewerActivity.PARAM_VIEWER_MODE, views.viewerMode.isChecked)
                 }
                 startActivity(intent)
             }

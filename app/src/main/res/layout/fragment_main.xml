@@ -78,6 +78,25 @@
             tools:text="/tmp/foo.bar"
             />
     </android.support.constraint.ConstraintLayout>
+    
+    <LinearLayout
+        android:id="@+id/viewer_mode_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/last_file_container">
+        <CheckBox
+            android:id="@+id/viewer_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:labelFor="@id/viewer_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/enable_viewer_mode"/>
+    </LinearLayout>
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/data_container"
@@ -85,7 +104,7 @@
         android:layout_height="48dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/last_file_container">
+        app:layout_constraintTop_toBottomOf="@id/viewer_mode_container">
         <Button
             android:id="@+id/send_file"
             android:layout_width="wrap_content"

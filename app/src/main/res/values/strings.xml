@@ -11,4 +11,5 @@
     <string name="send_file">Send</string>
     <string name="send_title">Send using</string>
     <string name="send_file_text">Data points from %s</string>
+    <string name="enable_viewer_mode">Enable viewer mode</string>
 </resources>

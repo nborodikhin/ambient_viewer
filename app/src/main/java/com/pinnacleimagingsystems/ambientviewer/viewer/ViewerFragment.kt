@@ -10,10 +10,7 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
-import android.widget.SeekBar
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import com.github.chrisbanes.photoview.PhotoView
 import com.pinnacleimagingsystems.ambientviewer.Deps
 import com.pinnacleimagingsystems.ambientviewer.R
@@ -24,15 +21,17 @@ class ViewerFragment: Fragment() {
     companion object {
         const val PARAM_FILE = "file"
         const val PARAM_ID = "id"
+        const val PARAM_VIEWER_MODE = "viewerMode"
 
         private const val MAXIMUM_SCALE = 64.0f
 
         private const val CHECKBOX_RESET_DELAY = 1000L
 
-        fun create(file: String, id: Int) = ViewerFragment().apply {
+        fun create(file: String, id: Int, viewerMode: Boolean = false) = ViewerFragment().apply {
             arguments = Bundle().apply {
                 putString(ViewerFragment.PARAM_FILE, file)
                 putInt(ViewerFragment.PARAM_ID, id)
+                putBoolean(ViewerFragment.PARAM_VIEWER_MODE, viewerMode)
             }
         }
     }
@@ -52,6 +51,7 @@ class ViewerFragment: Fragment() {
         val bitmapState: TextView = findViewById(R.id.bitmap_state)
         val parameterSlider: SeekBar = findViewById(R.id.parameter_slider)
         val saveCheckbox: CheckBox = findViewById(R.id.save_checkbox)
+        val toggle: Switch = findViewById(R.id.adapted_toggle)
     } }
 
     private val host get() = activity!! as Host
@@ -77,15 +77,17 @@ class ViewerFragment: Fragment() {
         super.onCreate(savedInstanceState)
         lightSensor = (context!!.applicationContext as LightSensor.Holder).getLightSensor()
 
-        presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java].apply {
-            init(lightSensor, activity!!.windowManager)
-        }
-
+        val enableViewerMode = arguments?.getBoolean(PARAM_VIEWER_MODE) ?: false
         fileId = arguments!!.getInt(PARAM_ID)
+
+        presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java].apply {
+            init(lightSensor, activity!!.windowManager, enableViewerMode)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val enableViewerMode = arguments?.getBoolean(PARAM_VIEWER_MODE) ?: false
 
         val lifecycleOwner: LifecycleOwner = this
 
@@ -95,9 +97,12 @@ class ViewerFragment: Fragment() {
                 setOnScaleChangeListener { _, _, _ -> updateLabel() }
                 setOnClickListener { _ -> presenter.onImageClicked() }
             }
+            toggle.setOnClickListener { presenter.onImageClicked() }
             contentClickOverlay.setOnClickListener { }
             saveCheckbox.setOnClickListener { _ -> onSaveClicked() }
         }
+
+        views.saveCheckbox.visibility = if (enableViewerMode) View.GONE else View.VISIBLE
 
         with(presenter.state) {
             state.observe(lifecycleOwner, Observer { state -> onStateChanged(state!!) })
@@ -119,7 +124,8 @@ class ViewerFragment: Fragment() {
 
     private fun startFlow() {
         val started = presenter.startFlow()
-        views.parameterSlider.init(presenter.state.curParameter.value!!.toInt())
+        views.parameterSlider.init()
+        views.parameterSlider.setParameter(presenter.state.curParameter.value!!)
         if (started) {
             processIntent()
         }
@@ -129,7 +135,9 @@ class ViewerFragment: Fragment() {
         views.content.postDelayed(block, delayMillis)
     }
 
-    private fun SeekBar.init(parameter: Int) {
+    var updatingProgress = false
+
+    private fun SeekBar.init() {
         val (min, range) = with (Deps.algorithm.meta) {
             parameterMin() to parameterMax() - parameterMin()
         }
@@ -137,17 +145,26 @@ class ViewerFragment: Fragment() {
 
         fun Int.asParameter() = min + (toFloat() / max) * range
 
-        setOnSeekBarChangeListener(null)
-
-        progress = parameter
-
         setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                presenter.onSetParameter(progress.asParameter())
+                if (!updatingProgress) {
+                    presenter.onSetParameter(progress.asParameter(), manualInput = true)
+                }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+    }
+
+    private fun SeekBar.setParameter(parameter: Float) {
+        updatingProgress = true
+        val (min, range) = with (Deps.algorithm.meta) {
+            parameterMin() to parameterMax() - parameterMin()
+        }
+        val max = 100
+        val sliderPos = max * (parameter - min) / range
+        progress = sliderPos.toInt()
+        updatingProgress = false
     }
 
     private fun processIntent() {
@@ -229,16 +246,29 @@ class ViewerFragment: Fragment() {
                 Toast.makeText(activity, "Error reading file: ${event.exception.message}", Toast.LENGTH_SHORT).show()
                 host.onViewerError(presenter.state.filePath)
             }
+            is ViewerPresenter.Event.LightSensorParameterComputed -> {
+                onLightSensorParameterComputed(event.parameter)
+            }
         }
     }
 
     private fun onDisplayingImageChanged(image: ViewerPresenter.Image) {
         views.photoView.replaceBitmap(image.bitmap)
+        when (image.type) {
+            ViewerPresenter.ImageType.ORIGINAL -> views.toggle.isChecked = false
+            ViewerPresenter.ImageType.WORKING -> views.toggle.isChecked = true
+        }
         updateLabel()
     }
 
     private fun onLightSensorChange() {
         updateLabel()
+        presenter.onLightSensorChanged()
+    }
+
+    private fun onLightSensorParameterComputed(parameter: Float) {
+        presenter.onSetParameter(parameter, manualInput = false)
+        views.parameterSlider.setParameter(parameter)
     }
 
     private fun PhotoView.replaceBitmap(bitmap: Bitmap) {
