@@ -179,6 +179,11 @@ class ViewerPresenterImpl: ViewerPresenter() {
     }
 
     override fun onSetParameter(parameter: Float) {
+        // note: direct comparing floats
+        if (state.curParameter.value == parameter) {
+            return
+        }
+
         state.state.value = State.PROCESSING
 
         processImage(parameter)
@@ -207,7 +212,10 @@ class ViewerPresenterImpl: ViewerPresenter() {
                     parameter
             )
 
-            if (processingId != currentProcessingId) return@execute
+            if (processingId != currentProcessingId) {
+                // don't update state here: there is a next request, it will set the state in the end
+                return@execute
+            }
 
             algorithm.init(parameter)
             updateBitmap(originalBitmap, workingBitmap)
