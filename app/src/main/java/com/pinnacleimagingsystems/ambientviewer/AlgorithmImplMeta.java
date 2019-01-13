@@ -10,7 +10,7 @@ public class AlgorithmImplMeta implements Algorithm.Meta {
 
     @Override
     public int parameterMax() {
-        return 10;
+        return 5;
     }
 
     @Override
@@ -18,6 +18,6 @@ public class AlgorithmImplMeta implements Algorithm.Meta {
         lux = Math.min(2500, lux);
         lux = Math.max(80, lux);
 
-        return (float) (2 * log(lux / 2500.0f) / log(2) + 10.5);
+        return (float) (log(lux / 2500.0f) / log(2) + 5);
     }
 }
