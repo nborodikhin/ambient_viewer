@@ -14,10 +14,10 @@ public class AlgorithmImplMeta implements Algorithm.Meta {
     }
 
     @Override
-    public int defaultParameter(int lux) {
+    public float defaultParameter(int lux) {
         lux = Math.min(2500, lux);
         lux = Math.max(80, lux);
 
-        return (int) (2 * log(lux / 2500.0f) / log(2) + 10.5);
+        return (float) (2 * log(lux / 2500.0f) / log(2) + 10.5);
     }
 }

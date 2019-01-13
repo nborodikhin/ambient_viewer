@@ -9,7 +9,7 @@ fun createDataPoint(
         viewingLux: Int
 ) = DataPoint(
         fileName = fileName,
-        slider = algorithmParameters.slider,
+        slider = algorithmParameters.parameter,
         viewingConditionLux = viewingLux,
         timeStamp = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())
 )

@@ -4,8 +4,8 @@
     <string name="load_image">Select image</string>
     <string name="select_images">Select multiple</string>
     <string name="load_last">Load Last</string>
-    <string name="original">Original, scale %s, %d lux</string>
-    <string name="adapted">Adapted, scale %s, %d lux, param %d</string>
+    <string name="original">Original, scale %.2f, %d lux</string>
+    <string name="adapted">Adapted, scale %.2f, %d lux, param %.1f</string>
     <string name="version">Version %s</string>
     <string name="data_points">Data points: %d</string>
     <string name="send_file">Send</string>

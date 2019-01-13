@@ -49,7 +49,7 @@ abstract class ViewerPresenter: ViewModel() {
         val displayName by lazy { MutableLiveData<String>() }
         val state by lazy { MutableLiveData<State>().apply { value = State.UNINITIALIZED } }
 
-        val curParameter by lazy { MutableLiveData<Int>() }
+        val curParameter by lazy { MutableLiveData<Float>() }
         val originalImage by lazy { MutableLiveData<Image>() }
         var filePath: String? = null
         var workingImage: Image? = null
@@ -63,7 +63,7 @@ abstract class ViewerPresenter: ViewModel() {
 
     abstract fun startFlow(): Boolean
     abstract fun loadFile(file: String)
-    abstract fun onSetParameter(parameter: Int)
+    abstract fun onSetParameter(parameter: Float)
     abstract fun onImageClicked()
     abstract fun onSaveButtonClicked(image: Image, viewingLux: Int)
 }
@@ -79,6 +79,8 @@ class ViewerPresenterImpl: ViewerPresenter() {
     private var screenMaxSize: Int = 0
 
     private lateinit var workingBitmap: Bitmap
+
+    private var currentProcessingId = 0
 
     fun init(lightSensor: LightSensor, windowsManager: WindowManager) {
         this.lightSensor = lightSensor
@@ -176,7 +178,7 @@ class ViewerPresenterImpl: ViewerPresenter() {
         switchDisplayingImages()
     }
 
-    override fun onSetParameter(parameter: Int) {
+    override fun onSetParameter(parameter: Float) {
         state.state.value = State.PROCESSING
 
         processImage(parameter)
@@ -192,8 +194,11 @@ class ViewerPresenterImpl: ViewerPresenter() {
         state.event.postValue(Event.DataPointSaved.asConsumable())
     }
 
-    private fun processImage(parameter: Int) {
+    private fun processImage(parameter: Float) {
         state.curParameter.postValue(parameter)
+
+        currentProcessingId++
+        val processingId = currentProcessingId
 
         bgExecutor.execute {
             val originalBitmap = state.originalImage.value!!.bitmap
@@ -201,6 +206,9 @@ class ViewerPresenterImpl: ViewerPresenter() {
             val parameters = AlgorithmParameters(
                     parameter
             )
+
+            if (processingId != currentProcessingId) return@execute
+
             algorithm.init(parameter)
             updateBitmap(originalBitmap, workingBitmap)
 

@@ -7,7 +7,7 @@ private const val TAG = "DataStorage"
 
 data class DataPoint(
         val fileName: String,
-        val slider: Int,
+        val slider: Float,
         val viewingConditionLux: Int,
         val timeStamp: Long
 )

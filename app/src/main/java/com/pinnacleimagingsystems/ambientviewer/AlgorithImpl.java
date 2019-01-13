@@ -14,7 +14,7 @@ public class AlgorithImpl implements Algorithm {
     private float MOD_ADJUSTMENT[];
     private int adjustmentTable[][];
 
-    private int parameter = 0;
+    private float parameter = 0;
     private double Root = Math.pow(2.0,0.5);
 
     private float linearize(int value) {
@@ -44,7 +44,7 @@ public class AlgorithImpl implements Algorithm {
     }
 
     @Override
-    public void init(int parameter) {
+    public void init(float parameter) {
         this.parameter = parameter;
         initCurves();
 

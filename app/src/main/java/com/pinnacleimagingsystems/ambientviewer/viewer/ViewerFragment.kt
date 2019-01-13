@@ -119,7 +119,7 @@ class ViewerFragment: Fragment() {
 
     private fun startFlow() {
         val started = presenter.startFlow()
-        views.parameterSlider.init(presenter.state.curParameter.value!!)
+        views.parameterSlider.init(presenter.state.curParameter.value!!.toInt())
         if (started) {
             processIntent()
         }
@@ -133,18 +133,20 @@ class ViewerFragment: Fragment() {
         val (min, range) = with (Deps.algorithm.meta) {
             parameterMin() to parameterMax() - parameterMin()
         }
-        max = range
+        max = 100
+
+        fun Int.asParameter() = min + (toFloat() / max) * range
 
         setOnSeekBarChangeListener(null)
 
         progress = parameter
 
         setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                presenter.onSetParameter(progress + min)
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                presenter.onSetParameter(progress.asParameter())
             }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
     }
 
@@ -250,7 +252,7 @@ class ViewerFragment: Fragment() {
     private fun updateLabel() {
         val image = presenter.state.displayingImage.value ?: return
 
-        val scale = views.photoView.scale.toString()
+        val scale = views.photoView.scale
 
         val label = when (image.type) {
             ViewerPresenter.ImageType.ORIGINAL ->
@@ -264,7 +266,7 @@ class ViewerFragment: Fragment() {
                         getString(R.string.adapted),
                         scale,
                         lightSensor.value.value!!.roundToInt(),
-                        image.parameters?.slider
+                        image.parameters?.parameter
                 )
         }
 

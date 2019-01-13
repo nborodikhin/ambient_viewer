@@ -11,7 +11,7 @@ class DbDataPoint {
     var fileName: String = ""
 
     @ColumnInfo(name = "parameter")
-    var parameter: Int = -1
+    var parameter: Float = -1.0f
 
     @ColumnInfo(name = "lux")
     var lux: Int = -1
@@ -32,7 +32,7 @@ interface DataPointDao {
     fun deleteAll()
 }
 
-@Database(entities = [DbDataPoint::class], version = 2, exportSchema = false)
+@Database(entities = [DbDataPoint::class], version = 3, exportSchema = false)
 abstract class AppDatabase: RoomDatabase() {
         abstract fun dataPoints(): DataPointDao
 }
