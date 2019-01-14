@@ -30,6 +30,7 @@
             android:id="@+id/adapted_toggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="40dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             android:theme="@style/GrayCheckbox"/>
@@ -49,7 +50,58 @@
             android:maxLines="1"
             android:shadowDx="3"
             android:shadowDy="3"
-            android:shadowRadius="5"/>
+            android:shadowRadius="5"
+            tools:text="Bitmap state"/>
+
+        <android.support.constraint.Guideline
+            android:id="@+id/bottom_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_end="48dp" />
+
+        <Switch
+            android:id="@+id/manual_mode_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:minHeight="30dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottom_top"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <SeekBar
+            android:id="@+id/parameter_slider"
+            style="@style/Widget.AppCompat.SeekBar"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/manual_mode_switch"
+            app:layout_constraintEnd_toStartOf="@id/save_checkbox"
+            app:layout_constraintTop_toBottomOf="@id/bottom_top"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_gravity="bottom"
+            android:max="5"
+            android:progress="3"
+            />
+
+        <TextView
+            android:id="@+id/automatic_mode_text"
+            android:labelFor="@id/manual_mode_switch"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/manual_mode_switch"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottom_top"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_gravity="bottom"
+            android:visibility="gone"
+            android:gravity="center_vertical|start"
+            android:textColor="@android:color/white"
+            android:shadowColor="@android:color/darker_gray"
+            android:text="@string/automatic_mode"
+            tools:visibility="visible"
+            />
 
         <CheckBox
             android:id="@+id/save_checkbox"
@@ -58,22 +110,10 @@
             android:minHeight="20dp"
             android:layout_margin="10dp"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/bottom_top"
             app:layout_constraintBottom_toBottomOf="parent"
             android:theme="@style/GrayCheckbox"/>
 
-        <SeekBar
-            android:id="@+id/parameter_slider"
-            style="@style/Widget.AppCompat.SeekBar.Discrete"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/save_checkbox"
-            app:layout_constraintTop_toTopOf="@id/save_checkbox"
-            app:layout_constraintBottom_toBottomOf="@id/save_checkbox"
-            android:layout_gravity="bottom"
-            android:max="10"
-            android:progress="3"
-            />
 
     </android.support.constraint.ConstraintLayout>
 

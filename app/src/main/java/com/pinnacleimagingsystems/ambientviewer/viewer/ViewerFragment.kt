@@ -52,6 +52,8 @@ class ViewerFragment: Fragment() {
         val parameterSlider: SeekBar = findViewById(R.id.parameter_slider)
         val saveCheckbox: CheckBox = findViewById(R.id.save_checkbox)
         val toggle: Switch = findViewById(R.id.adapted_toggle)
+        val manualModeToggle: Switch = findViewById(R.id.manual_mode_switch)
+        val automaticModeText: TextView = findViewById(R.id.automatic_mode_text)
     } }
 
     private val host get() = activity!! as Host
@@ -69,6 +71,15 @@ class ViewerFragment: Fragment() {
     private val longAnimTime: Long
             get() = resources.getInteger(android.R.integer.config_longAnimTime).toLong()
 
+    private val inViewerMode
+            get() = arguments?.getBoolean(PARAM_VIEWER_MODE) ?: false
+
+    private val inTesterMode
+        get() = !inViewerMode
+
+    private val manualModeEnabled
+        get() = inTesterMode || views.manualModeToggle.isChecked
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_viewer, container, false)
     }
@@ -77,17 +88,15 @@ class ViewerFragment: Fragment() {
         super.onCreate(savedInstanceState)
         lightSensor = (context!!.applicationContext as LightSensor.Holder).getLightSensor()
 
-        val enableViewerMode = arguments?.getBoolean(PARAM_VIEWER_MODE) ?: false
         fileId = arguments!!.getInt(PARAM_ID)
 
         presenter = ViewModelProviders.of(this)[ViewerPresenterImpl::class.java].apply {
-            init(lightSensor, activity!!.windowManager, enableViewerMode)
+            init(lightSensor, activity!!.windowManager, enableContinuousUpdate = inViewerMode)
         }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val enableViewerMode = arguments?.getBoolean(PARAM_VIEWER_MODE) ?: false
 
         val lifecycleOwner: LifecycleOwner = this
 
@@ -100,9 +109,20 @@ class ViewerFragment: Fragment() {
             toggle.setOnClickListener { presenter.onImageClicked() }
             contentClickOverlay.setOnClickListener { }
             saveCheckbox.setOnClickListener { _ -> onSaveClicked() }
+            manualModeToggle.setOnCheckedChangeListener { _, isChecked ->
+                onManualModeUpdated(manualMode = isChecked)
+            }
+
+            if (inViewerMode) {
+                saveCheckbox.visibility = View.GONE
+                manualModeToggle.visibility = View.VISIBLE
+            } else {
+                saveCheckbox.visibility = View.VISIBLE
+                manualModeToggle.visibility = View.GONE
+            }
         }
 
-        views.saveCheckbox.visibility = if (enableViewerMode) View.GONE else View.VISIBLE
+        onManualModeUpdated(manualMode = manualModeEnabled, activeNotification = false)
 
         with(presenter.state) {
             state.observe(lifecycleOwner, Observer { state -> onStateChanged(state!!) })
@@ -267,6 +287,9 @@ class ViewerFragment: Fragment() {
     }
 
     private fun onLightSensorParameterComputed(parameter: Float) {
+        if (manualModeEnabled) {
+            return
+        }
         presenter.onSetParameter(parameter, manualInput = false)
         views.parameterSlider.setParameter(parameter)
     }
@@ -309,5 +332,14 @@ class ViewerFragment: Fragment() {
         val viewingLux = lightSensor.value.value?.roundToInt() ?: -1
 
         presenter.onSaveButtonClicked(image, viewingLux)
+    }
+
+    private fun onManualModeUpdated(manualMode: Boolean, activeNotification: Boolean = true) {
+        views.automaticModeText.visibility = if (manualMode) View.GONE else View.VISIBLE
+        views.parameterSlider.visibility = if (manualMode) View.VISIBLE else View.GONE
+
+        if (manualMode && activeNotification) {
+            Toast.makeText(context, R.string.manual_mode_toast, Toast.LENGTH_SHORT).show()
+        }
     }
 }

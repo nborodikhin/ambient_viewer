@@ -12,4 +12,6 @@
     <string name="send_title">Send using</string>
     <string name="send_file_text">Data points from %s</string>
     <string name="enable_viewer_mode">Enable viewer mode</string>
+    <string name="automatic_mode">Automatic mode: ON</string>
+    <string name="manual_mode_toast">Manual mode enabled</string>
 </resources>
